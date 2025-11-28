@@ -187,6 +187,22 @@ pnpm example:bpmn
 - Round-trip conversion with BPMN tools
 - Using bpmn-moddle for XML parsing and generation
 
+### Planner (`planner.ts`)
+
+Demonstrates execution planning for Virta pipelines.
+
+**Run:**
+```bash
+pnpm example:planner
+```
+
+**What it demonstrates:**
+- Critical path computation through DAGs
+- Execution mode decision (Lambda vs Step Functions vs Hybrid)
+- Timing estimates (p50, p99) usage
+- Execution hints support
+- Safety margins and configuration
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:
