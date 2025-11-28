@@ -1,0 +1,41 @@
+{
+  "name": "Virta",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    },
+    "ghcr.io/devcontainers/features/pnpm:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "overrideCommand": false,
+  "runArgs": [
+    "--cap-drop=ALL",
+    "--security-opt",
+    "no-new-privileges"
+  ],
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "files.exclude": {
+          "**/node_modules": true,
+          "**/dist": true
+        }
+      }
+    }
+  },
+  "postCreateCommand": "if command -v pnpm >/dev/null 2>&1; then pnpm install; else npm install; fi",
+  "mounts": [
+    "source=vscode-node-modules,target=/usr/local/share/.cache/yarn,type=volume",
+    "source=vscode-npm-cache,target=/home/vscode/.npm,type=volume"
+  ],
+  "containerEnv": {
+    "NODE_ENV": "development"
+  }
+}

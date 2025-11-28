@@ -8,13 +8,15 @@ It provides:
     
 -   **parallel step execution** of independent steps,
     
--   support for **multiple workflow definition formats**:
-    
-    -   JSONata (inside-step transformations),
-        
-    -   Amazon States Language (ASL),
-        
-    -   Arazzo (OpenAPI-based API workflows),
+-   support for **multiple workflow definition formats** (import/export unless noted):
+
+    -   **Amazon States Language (ASL)** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)),
+
+    -   **Arazzo** ([spec](https://spec.openapis.org/arazzo/v1.0.0)),
+
+    -   **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) for process import/export mapped to DAG semantics,
+
+    -   **JSONata** ([docs](https://jsonata.org/)) inside-step transformations,
         
 -   an **execution planner** that can decide between:
     
@@ -180,7 +182,7 @@ Virta resolves these to actual TypeScript step classes via a registry.
 
 JSONata is used as **an expression language inside steps**, not as a workflow DSL.
 
-Package: `@virta/jsonata` (suggested name: `virta-jsonata`).
+Package: `@virta/jsonata`.
 
 ### 4.1 JSONata-Based Step
 
@@ -199,9 +201,9 @@ Possible extensions:
 
 ## 5\. Amazon States Language (ASL) Integration
 
-Virta supports **import and export** of workflows defined in **Amazon States Language**.
+Virta supports **import and export** of workflows defined in **Amazon States Language** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)).
 
-Package: `@virta/asl` (suggested: `virta-asl`).
+Package: `@virta/asl`.
 
 ### 5.1 ASL → `PipelineDefinition` (Import)
 
@@ -255,11 +257,11 @@ Implementation details (e.g., how to map custom node types to ASL patterns) can 
 
 ## 6\. Arazzo Integration
 
-[Arazzo](https://spec.openapis.org/arazzo/v1.0.1.html) defines workflows over OpenAPI operations.
+[Arazzo](https://spec.openapis.org/arazzo/v1.0.0) defines workflows over OpenAPI operations.
 
 Virta uses Arazzo as another **full workflow specification format**.
 
-Package: `@virta/arazzo` (suggested: `virta-arazzo`).
+Package: `@virta/arazzo`.
 
 ### 6.1 Arazzo → `PipelineDefinition` (Import)
 
@@ -289,11 +291,41 @@ Optionally Virta can export its internal DAG to Arazzo to:
 -   Allow external tools to consume Virta workflows via standardized formats.
     
 
-## 7\. Execution Planner (Lambda vs Step Functions vs Hybrid)
+## 7. BPMN 2.0 Integration
+
+[BPMN 2.0](https://www.omg.org/spec/BPMN/2.0) is supported for **import/export** to interoperate with business process tooling while preserving DAG semantics.
+
+Package: `@virta/bpmn`.
+
+### 7.1 BPMN → `PipelineDefinition` (Import)
+
+`function bpmnToPipelineDefinition(bpmnXml: string): PipelineDefinition;`
+
+Mapping strategy:
+
+-   Parse the BPMN XML model and identify **tasks** (service/user tasks mapped to `"task"`) and **gateways** (exclusive/parallel mapped to `"choice"`/`"parallel"`).
+-   Translate sequence flows into `dependsOn` relationships, preserving branch joins and splits.
+-   Carry over data objects or extension elements into `config` for downstream adapters.
+
+### 7.2 `PipelineDefinition` → BPMN (Export)
+
+`function pipelineDefinitionToBpmn(def: PipelineDefinition): string; // BPMN XML`
+
+Use cases:
+
+-   Enable BPMN-native visualization and documentation of Virta DAGs.
+-   Round-trip pipelines where non-mappable extensions are dropped with warnings.
+
+### 7.3 Round-Trip Validation
+
+-   The BPMN adapter should ship **fixtures and validators** that cover tasks, parallel/exclusive gateways, timers, and error handlers aligned with the workflow compatibility matrix in `README.md`.
+-   Warnings should surface when BPMN-specific constructs (e.g., ad-hoc subprocesses, event subprocesses, message correlations) cannot map cleanly to DAG semantics.
+
+## 8. Execution Planner (Lambda vs Step Functions vs Hybrid)
 
 The **planner** decides how a given Virta pipeline should run in AWS.
 
-Package: `@virta/planner` (suggested: `virta-planner`).
+Package: `@virta/planner`.
 
 ### 7.1 Inputs
 
@@ -356,7 +388,7 @@ Suggested rules:
         -   which nodes belong to Lambda vs Step Functions.
             
 
-## 8\. Runtime Timeout Handling (Lambda Runtime)
+## 9. Runtime Timeout Handling (Lambda Runtime)
 
 When Virta pipelines run **inside AWS Lambda**, the runner uses hooks to measure step runtimes:
 
@@ -396,12 +428,12 @@ The planner consumes these events and:
 -   can trigger infra migration (Lambda → Step Functions, or vice versa).
     
 
-## 9\. Infrastructure Regeneration (CDK / projen)
+## 10. Infrastructure Regeneration (CDK / projen)
 
 Virta does **not** embed AWS-specific logic directly in the core engine.  
 Instead, an integration package uses **AWS CDK** (optionally with **projen**) to generate infra stacks based on planner decisions.
 
-Package: `@virta/cdk` (suggested: `virta-cdk`).
+Package: `@virta/cdk`.
 
 ### 9.1 Modes
 
@@ -458,11 +490,11 @@ A possible workflow:
 
 The exact automation level (auto PR vs auto deploy) is configurable and outside the core engine.
 
-## 10\. MCP Server (Optional)
+## 11. MCP Server (Optional)
 
 Virta can be exposed via an **MCP server** so LLM tools and IDE agents can introspect and operate on pipelines.
 
-Package: `@virta/mcp-server` (suggested: `virta-mcp-server`).
+Package: `@virta/mcp-server`.
 
 ### 10.1 Example MCP Tools
 
@@ -485,10 +517,13 @@ Package: `@virta/mcp-server` (suggested: `virta-mcp-server`).
 -   `export_asl`  
     Returns ASL JSON for a pipeline.
     
--   `export_arazzo`  
+-   `export_arazzo`
     Returns Arazzo scenario JSON/YAML.
-    
--   `import_asl` / `import_arazzo`  
+
+-   `export_bpmn`
+    Returns BPMN 2.0 XML for a pipeline.
+
+-   `import_asl` / `import_arazzo` / `import_bpmn`
     Register or update Virta pipelines from external specs.
     
 
@@ -501,11 +536,24 @@ This allows:
 -   Execution and testing from within IDEs or AI tooling.
     
 
-## 11\. Suggested Monorepo Layout
+## 12. Suggested Monorepo Layout
 
-Top-level repo name: `virta` (or `virta-flow` if needed for uniqueness).
+Top-level repo name: `virta` (or `virta-flow` if needed for uniqueness). Directory names remain unscoped (`packages/core`), while `package.json` names use the scoped `@virta/*` convention that matches common TypeScript/Node package naming.
 
-`virta/   packages/     virta-core/        # core DAG engine (ctx, PipelineStep, buildLevels, runPipeline)     virta-registry/    # StepRegistry, PipelineDefinition <-> RegisteredStep utils     virta-jsonata/     # JSONata-based steps and helpers     virta-asl/         # ASL <-> PipelineDefinition import/export     virta-arazzo/      # Arazzo <-> PipelineDefinition import/export     virta-planner/     # critical path, timing, ExecutionMode decisions     virta-cdk/         # CDK/projen-based infra generators     virta-mcp-server/  # MCP server exposing Virta as tools     virta-examples/    # example pipelines, AWS demos, docs samples`
+```
+virta/
+  packages/
+    core/         # package name @virta/core — core DAG engine (ctx, PipelineStep, buildLevels, runPipeline)
+    registry/     # package name @virta/registry — StepRegistry, PipelineDefinition <-> RegisteredStep utils
+    jsonata/      # package name @virta/jsonata — JSONata-based steps and helpers
+    asl/          # package name @virta/asl — ASL <-> PipelineDefinition import/export
+    arazzo/       # package name @virta/arazzo — Arazzo <-> PipelineDefinition import/export
+    bpmn/         # package name @virta/bpmn — BPMN <-> PipelineDefinition import/export with validators
+    planner/      # package name @virta/planner — critical path, timing, ExecutionMode decisions
+    cdk/          # package name @virta/cdk — CDK/projen-based infra generators
+    mcp-server/   # package name @virta/mcp-server — MCP server exposing Virta as tools
+    examples/     # package name @virta/examples — example pipelines, AWS demos, docs samples
+```
 
 Build / tooling (to be decided):
 
@@ -518,7 +566,7 @@ Build / tooling (to be decided):
 -   Infra code generation: `projen` + `aws-cdk`.
     
 
-## 12\. Open Decisions (for Future Design Discussion)
+## 13. Open Decisions (for Future Design Discussion)
 
 These aspects are **intentionally left open** so they can be decided later:
 
