@@ -1,0 +1,35 @@
+{
+  "name": "@virta/examples",
+  "version": "0.0.1",
+  "description": "Example pipelines and demos for Virta DAG engine",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "example:basic": "tsx src/basic.ts",
+    "example:parallel": "tsx src/parallel.ts",
+    "example:error-handling": "tsx src/error-handling.ts",
+    "example:hooks": "tsx src/hooks.ts"
+  },
+  "dependencies": {
+    "@virta/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}
+
