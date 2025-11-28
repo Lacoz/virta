@@ -8,7 +8,7 @@ Virta provides:
 
 - A **pure TypeScript core** (no vendor lock-in).
 - **Parallel execution** for independent steps in a DAG.
-- Support for **multiple workflow definition formats**, including JSONata (inside-step transformations), Amazon States Language (ASL), Arazzo (OpenAPI-based API workflows), and **BPMN** for **import/export** interoperability.
+- Support for **multiple workflow definition formats**, including **JSONata** ([docs](https://jsonata.org/)) for inside-step transformations, **Amazon States Language (ASL)** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)), **Arazzo** ([spec](https://spec.openapis.org/arazzo/v1.0.0)) for OpenAPI-based API workflows, and **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) for **import/export** interoperability.
 - An **execution planner** that can choose between inline **AWS Lambda**, **AWS Step Functions**, or a **hybrid** split deployment.
 - An optional **MCP server** so LLM tools (ChatGPT, IDE agents, etc.) can inspect, plan, and execute pipelines.
 
@@ -137,10 +137,10 @@ If execution mode changes (Lambda → Step Functions or vice versa):
 
 Virta intentionally supports multiple representations for interoperability:
 
-- **JSONata** for inside-step transformations.
-- **Amazon States Language (ASL)** import/export.
-- **Arazzo** (OpenAPI-based API workflows) import/export.
-- **BPMN process import/export** (conceptually aligned with ASL/Arazzo) to exchange processes with BPM tools; imported models should map BPMN tasks/gateways into Virta DAG steps, and exported models should preserve parallelism and dependencies without losing DAG semantics.
+- **JSONata** ([docs](https://jsonata.org/)) for inside-step transformations.
+- **Amazon States Language (ASL)** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)) import/export.
+- **Arazzo** ([spec](https://spec.openapis.org/arazzo/v1.0.0)) import/export for OpenAPI-based API workflows.
+- **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) process import/export (conceptually aligned with ASL/Arazzo) to exchange processes with BPM tools; imported models should map BPMN tasks/gateways into Virta DAG steps, and exported models should preserve parallelism and dependencies without losing DAG semantics.
 
 ## 4. MCP Server (Optional)
 

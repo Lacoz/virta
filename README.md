@@ -11,10 +11,10 @@ For a detailed technical reference covering the DAG engine, workflow formats, an
 
 ## Workflow formats
 Virta intentionally supports multiple representations so teams can exchange workflows with external systems:
-- **Amazon States Language (ASL)** import/export.
-- **Arazzo** (OpenAPI-driven) import/export.
-- **BPMN process import/export** to interoperate with BPM tools while preserving DAG semantics.
-- **JSONata** for inside-step transformations.
+- **Amazon States Language (ASL)** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)) import/export.
+- **Arazzo** ([spec](https://spec.openapis.org/arazzo/v1.0.0)) import/export.
+- **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) process import/export to interoperate with BPM tools while preserving DAG semantics.
+- **JSONata** ([docs](https://jsonata.org/)) for inside-step transformations.
 
 ## Execution planning
 An execution planner selects the right deployment model per pipeline:
