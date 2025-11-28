@@ -3,15 +3,28 @@ import type {
   PipelineStep,
   TransformationContext,
 } from "@virta/core";
+import { loadExpression } from "./loadExpression.js";
 
 /**
  * Options for configuring a JsonataStep
  */
 export interface JsonataStepOptions {
   /**
-   * The JSONata expression to evaluate
+   * The JSONata expression to evaluate (mutually exclusive with expressionPath/expressionUrl)
    */
-  expression: string;
+  expression?: string;
+  /**
+   * Path to a local file containing the JSONata expression (mutually exclusive with expression/expressionUrl)
+   */
+  expressionPath?: string;
+  /**
+   * URL to fetch the JSONata expression from (mutually exclusive with expression/expressionPath)
+   */
+  expressionUrl?: string;
+  /**
+   * Optional fetch options when loading from URL
+   */
+  fetchOptions?: RequestInit;
   /**
    * Whether to merge the result into the target context
    * If false, the result replaces the target
@@ -42,17 +55,45 @@ export interface JsonataStepOptions {
  * ```
  */
 export class JsonataStep<S, T> implements PipelineStep<S, T> {
-  private readonly compiledExpression: jsonata.Expression;
+  private compiledExpression: jsonata.Expression | null = null;
+  private readonly expressionSource: string | Promise<string>;
   private readonly merge: boolean;
   private readonly customInput?: Record<string, unknown>;
 
   constructor(options: JsonataStepOptions) {
-    this.compiledExpression = jsonata(options.expression);
+    // Determine expression source
+    if (options.expression) {
+      this.expressionSource = options.expression;
+      this.compiledExpression = jsonata(options.expression);
+    } else if (options.expressionPath) {
+      this.expressionSource = loadExpression(options.expressionPath);
+    } else if (options.expressionUrl) {
+      this.expressionSource = loadExpression(options.expressionUrl, options.fetchOptions);
+    } else {
+      throw new Error(
+        "JsonataStep requires one of: expression, expressionPath, or expressionUrl"
+      );
+    }
+
     this.merge = options.merge ?? true;
     this.customInput = options.input;
   }
 
+  private async getCompiledExpression(): Promise<jsonata.Expression> {
+    if (this.compiledExpression) {
+      return this.compiledExpression;
+    }
+
+    // Load expression from external source
+    const expression = await this.expressionSource;
+    this.compiledExpression = jsonata(expression);
+    return this.compiledExpression;
+  }
+
   async execute(ctx: TransformationContext<S, T>): Promise<void> {
+    // Ensure expression is compiled
+    const expression = await this.getCompiledExpression();
+
     // Prepare input for JSONata expression
     const input = this.customInput ?? {
       source: ctx.source,
@@ -62,7 +103,7 @@ export class JsonataStep<S, T> implements PipelineStep<S, T> {
     // Evaluate the JSONata expression
     let result: unknown;
     try {
-      const evaluationResult = this.compiledExpression.evaluate(input);
+      const evaluationResult = expression.evaluate(input);
       // JSONata evaluate can return a Promise
       result = evaluationResult instanceof Promise ? await evaluationResult : evaluationResult;
     } catch (error) {

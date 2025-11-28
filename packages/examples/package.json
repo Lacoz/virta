@@ -22,7 +22,8 @@
     "example:parallel": "tsx src/parallel.ts",
     "example:error-handling": "tsx src/error-handling.ts",
     "example:hooks": "tsx src/hooks.ts",
-    "example:jsonata": "tsx src/jsonata.ts"
+    "example:jsonata": "tsx src/jsonata.ts",
+    "example:jsonata-external": "tsx src/jsonata-external.ts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",

@@ -12,6 +12,14 @@ pnpm add @virta/jsonata
 
 ## Usage
 
+### Loading Expressions
+
+JSONata expressions can be provided in three ways:
+
+1. **Inline expression** - Direct string in code
+2. **Local file** - Load from a file on disk
+3. **HTTP/HTTPS URL** - Fetch from a remote URL
+
 ### Basic Usage
 
 Create a pipeline step that uses a JSONata expression:
@@ -40,15 +48,63 @@ const result = await runPipeline(definition, {
 });
 ```
 
+### Loading from File
+
+Load a JSONata expression from a local file:
+
+```typescript
+import { JsonataStep } from "@virta/jsonata";
+
+class TransformStep extends JsonataStep<SourceData, TargetData> {
+  constructor() {
+    super({
+      expressionPath: "./expressions/transform.jsonata",
+    });
+  }
+}
+```
+
+### Loading from URL
+
+Load a JSONata expression from an HTTP/HTTPS URL:
+
+```typescript
+import { JsonataStep } from "@virta/jsonata";
+
+class TransformStep extends JsonataStep<SourceData, TargetData> {
+  constructor() {
+    super({
+      expressionUrl: "https://example.com/transformations/transform.jsonata",
+      fetchOptions: {
+        headers: {
+          "Authorization": "Bearer token",
+        },
+      },
+    });
+  }
+}
+```
+
 ### Using Factory Function
 
-You can also use the `createJsonataStep` factory function:
+You can also use the `createJsonataStep` factory function, which auto-detects the source:
 
 ```typescript
 import { createJsonataStep } from "@virta/jsonata";
 
-const step = createJsonataStep<SourceData, TargetData>(
+// Inline expression
+const step1 = createJsonataStep<SourceData, TargetData>(
   '{"computed": source.value * 2}'
+);
+
+// File path (auto-detected)
+const step2 = createJsonataStep<SourceData, TargetData>(
+  "./expressions/transform.jsonata"
+);
+
+// URL (auto-detected)
+const step3 = createJsonataStep<SourceData, TargetData>(
+  "https://example.com/transform.jsonata"
 );
 ```
 
@@ -62,11 +118,16 @@ The JSONata expression receives an input object containing:
 
 ```typescript
 interface JsonataStepOptions {
-  expression: string;        // JSONata expression to evaluate
-  merge?: boolean;           // Merge result into target (default: true)
+  expression?: string;        // Inline JSONata expression
+  expressionPath?: string;    // Path to local file containing expression
+  expressionUrl?: string;     // URL to fetch expression from
+  fetchOptions?: RequestInit; // Optional fetch options for URLs
+  merge?: boolean;            // Merge result into target (default: true)
   input?: Record<string, unknown>; // Custom input object
 }
 ```
+
+**Note:** You must provide exactly one of `expression`, `expressionPath`, or `expressionUrl`.
 
 ## Examples
 
@@ -141,9 +202,37 @@ new JsonataStep(options: JsonataStepOptions)
 
 Factory function to create a `JsonataStep` instance.
 
+## Loading Expressions from External Sources
+
+### Helper Functions
+
+You can also use the helper functions directly:
+
+```typescript
+import {
+  loadExpression,
+  loadExpressionFromFile,
+  loadExpressionFromUrl,
+} from "@virta/jsonata";
+
+// Load from file
+const expr1 = await loadExpressionFromFile("./transform.jsonata");
+
+// Load from URL
+const expr2 = await loadExpressionFromUrl("https://example.com/transform.jsonata");
+
+// Auto-detect (file or URL)
+const expr3 = await loadExpression("./transform.jsonata");
+const expr4 = await loadExpression("https://example.com/transform.jsonata");
+```
+
+### Expression Caching
+
+When loading from external sources, the expression is compiled and cached after the first load. Subsequent executions of the same step will reuse the cached compiled expression, improving performance.
+
 ## See Also
 
 - [JSONata Documentation](https://docs.jsonata.org/)
 - [Virta Core Documentation](../core/README.md)
-- [Examples Package](../examples/README.md) - Contains a complete JSONata example
+- [Examples Package](../examples/README.md) - Contains complete JSONata examples including external sources
 

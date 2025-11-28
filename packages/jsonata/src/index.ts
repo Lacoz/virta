@@ -11,4 +11,9 @@
 export { JsonataStep } from "./JsonataStep.js";
 export { createJsonataStep } from "./createJsonataStep.js";
 export type { JsonataStepOptions } from "./JsonataStep.js";
+export {
+  loadExpression,
+  loadExpressionFromFile,
+  loadExpressionFromUrl,
+} from "./loadExpression.js";
 

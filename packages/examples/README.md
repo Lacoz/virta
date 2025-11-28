@@ -76,6 +76,21 @@ pnpm example:jsonata
 - Complex calculations using JSONata functions
 - Combining JSONata steps with regular steps
 
+### JSONata External Sources (`jsonata-external.ts`)
+
+Shows how to load JSONata expressions from external files and URLs.
+
+**Run:**
+```bash
+pnpm example:jsonata-external
+```
+
+**What it demonstrates:**
+- Loading expressions from local files
+- Loading expressions from HTTP/HTTPS URLs
+- Auto-detection of expression source type
+- Expression caching for performance
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:
