@@ -15,4 +15,5 @@ export * from "./parallel.js";
 export * from "./error-handling.js";
 export * from "./hooks.js";
 export * from "./jsonata.js";
+export * from "./registry.js";
 

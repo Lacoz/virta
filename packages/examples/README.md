@@ -91,6 +91,21 @@ pnpm example:jsonata-external
 - Auto-detection of expression source type
 - Expression caching for performance
 
+### Registry (`registry.ts`)
+
+Demonstrates using StepRegistry and PipelineDefinition for converting between external formats and core model.
+
+**Run:**
+```bash
+pnpm example:registry
+```
+
+**What it demonstrates:**
+- Registering steps with string IDs
+- Converting PipelineDefinition to RegisteredStep[]
+- Converting RegisteredStep[] back to PipelineDefinition
+- Round-trip conversion for import/export workflows
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:

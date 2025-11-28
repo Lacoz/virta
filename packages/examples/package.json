@@ -23,11 +23,13 @@
     "example:error-handling": "tsx src/error-handling.ts",
     "example:hooks": "tsx src/hooks.ts",
     "example:jsonata": "tsx src/jsonata.ts",
-    "example:jsonata-external": "tsx src/jsonata-external.ts"
+    "example:jsonata-external": "tsx src/jsonata-external.ts",
+    "example:registry": "tsx src/registry.ts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",
-    "@virta/jsonata": "workspace:*"
+    "@virta/jsonata": "workspace:*",
+    "@virta/registry": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
