@@ -19,17 +19,33 @@ It provides:
     -   **JSONata** ([docs](https://jsonata.org/)) inside-step transformations,
         
 -   an **execution planner** that can decide between:
-    
+
     -   inline **AWS Lambda** execution,
-        
+
     -   **AWS Step Functions**,
-        
+
     -   or a **hybrid** split (part Lambda, part Step Functions),
-        
+
 -   an optional **MCP server** so LLM tools (ChatGPT, IDE agents…) can inspect, plan, and execute pipelines.
-    
+
 
 > **Name**: _Virta_ — Finnish for _flow / current_.
+
+## Workflow compatibility matrix (import/export fidelity)
+
+| Capability / Feature                          | ASL (AWS Step Functions) | Arazzo                           | BPMN 2.0                                  |
+|-----------------------------------------------|--------------------------|----------------------------------|-------------------------------------------|
+| DAG task graph (steps + dependencies)         | ✅ Full                  | ✅ Full                          | ✅ Full (tasks/gateways mapped to DAG nodes) |
+| Parallel branches                             | ✅ Parallel state        | ✅ `parallel` block              | ✅ Parallel gateways                       |
+| Conditional choice                            | ✅ Choice state          | ✅ `switch`/`when`               | ✅ Exclusive gateways                      |
+| Loop/repeat constructs                        | ⚠️ Limited (`Map`, `Retry`) | ⚠️ Limited (`loop` / bounded)    | ⚠️ Limited (bounded loops; no unbounded `while`)   |
+| Timers / waits                                | ✅ Wait state            | ✅ `sleep`                       | ✅ Intermediate timer events               |
+| Error handling & retries                      | ✅ `Catch` / `Retry`      | ✅ `on_error`                     | ✅ Boundary events (mapped to retries/compensation) |
+| Data mapping / expressions                    | ✅ Pass/Parameters       | ✅ Inputs/Outputs (JSONata)      | ✅ Data objects (JSONata inside tasks)     |
+| Human tasks / forms                           | ❌ Not modeled           | ❌ Not modeled                   | ⚠️ Partial (import/export only for service tasks)  |
+| Vendor-specific extensions                    | ⚠️ Partial (`States.*`)  | ⚠️ Partial (custom blocks)       | ⚠️ Partial (drops non-mappable extensions)         |
+
+Round-trip intent: import/export fidelity is measured against this matrix; unsupported elements are dropped or downgraded with explicit warnings. Each adapter package ships fixtures and validators to flag gaps when formats evolve.
 
 ## 1\. Core: TypeScript DAG Pipeline Engine
 
