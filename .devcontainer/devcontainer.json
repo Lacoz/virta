@@ -1,9 +1,9 @@
 {
   "name": "Virta",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "22"
+      "version": "24"
     },
     "ghcr.io/devcontainers/features/pnpm:2": {},
     "ghcr.io/devcontainers/features/git:1": {}
