@@ -1,7 +1,7 @@
 {
-  "name": "@virta/examples",
+  "name": "@virta/jsonata",
   "version": "0.0.1",
-  "description": "Example pipelines and demos for Virta DAG engine",
+  "description": "JSONata helpers for step-level transformations in Virta pipelines",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,20 +18,16 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "tsc --noEmit -p tsconfig.json",
-    "example:basic": "tsx src/basic.ts",
-    "example:parallel": "tsx src/parallel.ts",
-    "example:error-handling": "tsx src/error-handling.ts",
-    "example:hooks": "tsx src/hooks.ts",
-    "example:jsonata": "tsx src/jsonata.ts"
+    "test": "vitest run --config vitest.config.mts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",
-    "@virta/jsonata": "workspace:*"
+    "jsonata": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "tsx": "^4.19.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
   }
 }
 

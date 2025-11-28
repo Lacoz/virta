@@ -62,6 +62,20 @@ pnpm example:hooks
 - Pipeline monitoring
 - Execution tracking
 
+### JSONata (`jsonata.ts`)
+
+Demonstrates using JSONata expressions for data transformation within pipeline steps.
+
+**Run:**
+```bash
+pnpm example:jsonata
+```
+
+**What it demonstrates:**
+- JSONata expressions for data transformation
+- Complex calculations using JSONata functions
+- Combining JSONata steps with regular steps
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:
