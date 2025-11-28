@@ -1,11 +1,15 @@
 {
   "name": "@virta/core",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Virta core DAG pipeline engine (TransformationContext, buildLevels, runPipeline)",
   "license": "MIT",
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
   "files": [
     "dist"
   ],
