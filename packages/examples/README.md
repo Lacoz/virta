@@ -136,6 +136,23 @@ pnpm example:arazzo
 - Exporting PipelineDefinition to Arazzo
 - Round-trip conversion with OpenAPI workflow tools
 
+### Arazzo ↔ ASL Conversion (`arazzo-asl-conversion.ts`)
+
+Shows bidirectional conversion between Arazzo and ASL formats using static files.
+
+**Run:**
+```bash
+pnpm example:arazzo-asl
+```
+
+**What it demonstrates:**
+- Loading Arazzo workflows from JSON files
+- Loading ASL workflows from JSON files
+- Converting Arazzo → PipelineDefinition → ASL
+- Converting ASL → PipelineDefinition → Arazzo
+- Round-trip conversion between formats
+- Using PipelineDefinition as intermediate format for format conversion
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:

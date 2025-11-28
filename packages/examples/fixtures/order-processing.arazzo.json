@@ -1,0 +1,36 @@
+{
+  "arazzo": "1.0.0",
+  "info": {
+    "title": "Order Processing Workflow",
+    "version": "1.0.0",
+    "description": "Processes orders through validation, processing, and formatting"
+  },
+  "scenarios": {
+    "order-processing": {
+      "description": "Main order processing scenario",
+      "steps": [
+        {
+          "id": "validate",
+          "type": "operation",
+          "operationId": "validateOrder",
+          "description": "Validate the order"
+        },
+        {
+          "id": "process",
+          "type": "operation",
+          "operationId": "processOrder",
+          "description": "Process the validated order",
+          "runAfter": ["validate"]
+        },
+        {
+          "id": "format",
+          "type": "operation",
+          "operationId": "formatOrder",
+          "description": "Format the processed order",
+          "runAfter": ["process"]
+        }
+      ]
+    }
+  }
+}
+

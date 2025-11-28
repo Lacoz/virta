@@ -26,7 +26,8 @@
     "example:jsonata-external": "tsx src/jsonata-external.ts",
     "example:registry": "tsx src/registry.ts",
     "example:asl": "tsx src/asl.ts",
-    "example:arazzo": "tsx src/arazzo.ts"
+    "example:arazzo": "tsx src/arazzo.ts",
+    "example:arazzo-asl": "tsx src/arazzo-asl-conversion.ts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",
