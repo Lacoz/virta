@@ -1,8 +1,6 @@
 # Virta
 
-Virta is a TypeScript-based **DAG workflow and pipeline engine** focused on portability, round-trip workflow interoperability, and secure tooling for AI-assisted development.
-
-For a detailed technical reference covering the DAG engine, workflow formats, and tooling expectations, see [`SPEC.md`](SPEC.md).
+Virta is a TypeScript-based **DAG workflow and pipeline engine** focused on portability, round-trip workflow interoperability, and secure tooling for AI-assisted development. See [SPEC.md](SPEC.md) for the full technical specification.
 
 ## Core capabilities
 - **Pure TypeScript runtime** with constructor-based step identity and parallel execution across DAG levels.
@@ -16,6 +14,21 @@ Virta intentionally supports multiple representations so teams can exchange work
 - **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) process import/export to interoperate with BPM tools while preserving DAG semantics.
 - **JSONata** ([docs](https://jsonata.org/)) for inside-step transformations.
 
+### Workflow compatibility matrix
+| Capability / Feature                          | ASL (AWS Step Functions) | Arazzo                           | BPMN 2.0                                          |
+|-----------------------------------------------|--------------------------|----------------------------------|---------------------------------------------------|
+| DAG task graph (steps + dependencies)         | ✅ Full                  | ✅ Full                          | ✅ Full (tasks/gateways mapped to DAG nodes)       |
+| Parallel branches                             | ✅ Parallel state        | ✅ `parallel` block              | ✅ Parallel gateways                               |
+| Conditional choice                            | ✅ Choice state          | ✅ `switch`/`when`               | ✅ Exclusive gateways                              |
+| Loop/repeat constructs                        | ⚠️ Limited (`Map`, `Retry`) | ⚠️ Limited (`loop` / bounded)    | ⚠️ Limited (bounded loops; no unbounded `while`)   |
+| Timers / waits                                | ✅ Wait state            | ✅ `sleep`                       | ✅ Intermediate timer events                       |
+| Error handling & retries                      | ✅ `Catch` / `Retry`      | ✅ `on_error`                     | ✅ Boundary events (mapped to retries/compensation) |
+| Data mapping / expressions                    | ✅ Pass/Parameters       | ✅ Inputs/Outputs (JSONata)      | ✅ Data objects (JSONata inside tasks)             |
+| Human tasks / forms                           | ❌ Not modeled           | ❌ Not modeled                   | ⚠️ Partial (import/export only for service tasks)  |
+| Vendor-specific extensions                    | ⚠️ Partial (`States.*`)  | ⚠️ Partial (custom blocks)       | ⚠️ Partial (drops non-mappable extensions)         |
+
+Round-trip intent: import/export fidelity is measured against this matrix; unsupported elements are dropped or downgraded with explicit warnings. A conformance validator (per adapter package) will exercise feature-coverage fixtures to flag gaps when formats evolve.
+
 ## Execution planning
 An execution planner selects the right deployment model per pipeline:
 - Inline **AWS Lambda** for simple or latency-sensitive pipelines.
@@ -28,16 +41,15 @@ Virta can be exposed through an MCP server so LLM tools and IDE agents can intro
 - Suggested package name: `@virta/mcp-server`.
 
 ## Repository layout (proposed)
-Monorepo packages are organized to keep the core runtime separate from format adapters and infra tooling (scoped packages prefa
-ced with `@virta/`):
-- `packages/@virta/core` — DAG engine (`TransformationContext`, `PipelineStep`, `buildLevels`, `runPipeline`).
-- `packages/@virta/registry` — registration utilities and `PipelineDefinition` conversion helpers.
-- `packages/@virta/jsonata` — JSONata helpers for step-level transformations.
-- `packages/@virta/asl`, `packages/@virta/arazzo`, `packages/@virta/bpmn` — import/export adapters for ASL, Arazzo, and BPMN.
-- `packages/@virta/planner` — critical path analysis and execution mode selection.
-- `packages/@virta/cdk` — CDK/projen infrastructure generators for Lambda/Step Functions deployments.
-- `packages/@virta/mcp-server` — MCP tooling surface for pipelines.
-- `packages/@virta/examples` — sample pipelines and demos.
+Monorepo packages are organized to keep the core runtime separate from format adapters and infra tooling. Folder names stay unscoped (e.g., `packages/core`), while `package.json` names use the scoped `@virta/*` convention common across TypeScript/Node libraries:
+- `packages/core` (`@virta/core`) — DAG engine (`TransformationContext`, `PipelineStep`, `buildLevels`, `runPipeline`).
+- `packages/registry` (`@virta/registry`) — registration utilities and `PipelineDefinition` conversion helpers.
+- `packages/jsonata` (`@virta/jsonata`) — JSONata helpers for step-level transformations.
+- `packages/asl`, `packages/arazzo`, `packages/bpmn` (`@virta/asl`, `@virta/arazzo`, `@virta/bpmn`) — import/export adapters for ASL, Arazzo, and BPMN.
+- `packages/planner` (`@virta/planner`) — critical path analysis and execution mode selection.
+- `packages/cdk` (`@virta/cdk`) — CDK/projen infrastructure generators for Lambda/Step Functions deployments.
+- `packages/mcp-server` (`@virta/mcp-server`) — MCP tooling surface for pipelines.
+- `packages/examples` (`@virta/examples`) — sample pipelines and demos.
 
 ## Development environment
 Use the devcontainer for isolated, least-privilege development:
