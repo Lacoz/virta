@@ -25,13 +25,15 @@
     "example:jsonata": "tsx src/jsonata.ts",
     "example:jsonata-external": "tsx src/jsonata-external.ts",
     "example:registry": "tsx src/registry.ts",
-    "example:asl": "tsx src/asl.ts"
+    "example:asl": "tsx src/asl.ts",
+    "example:arazzo": "tsx src/arazzo.ts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",
     "@virta/jsonata": "workspace:*",
     "@virta/registry": "workspace:*",
-    "@virta/asl": "workspace:*"
+    "@virta/asl": "workspace:*",
+    "@virta/arazzo": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

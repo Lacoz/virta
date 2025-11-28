@@ -121,6 +121,21 @@ pnpm example:asl
 - Exporting PipelineDefinition to ASL
 - Round-trip conversion with AWS Step Functions format
 
+### Arazzo (`arazzo.ts`)
+
+Demonstrates importing and exporting workflows using Arazzo (OpenAPI-based) format.
+
+**Run:**
+```bash
+pnpm example:arazzo
+```
+
+**What it demonstrates:**
+- Importing Arazzo workflow documents
+- Converting Arazzo scenarios to PipelineDefinition
+- Exporting PipelineDefinition to Arazzo
+- Round-trip conversion with OpenAPI workflow tools
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:
