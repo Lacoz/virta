@@ -55,7 +55,14 @@ Round-trip intent: import/export fidelity is measured against this matrix; unsup
 
 Shared, mutable context passed to all steps:
 
-`type TransformationContext<S, T> = {   source: S;   target: T;   stopPipeline?: boolean;   error?: unknown; };`
+```ts
+type TransformationContext<S, T> = {
+  source: S;
+  target: T;
+  stopPipeline?: boolean;
+  error?: unknown;
+};
+```
 
 -   `source`: original input entity (e.g. `Account`, `Event`, `Message`).
     
@@ -70,7 +77,11 @@ Shared, mutable context passed to all steps:
 
 Each step is a class implementing:
 
-`interface PipelineStep<S, T> {   execute(ctx: TransformationContext<S, T>): Promise<void> | void; }`
+```ts
+interface PipelineStep<S, T> {
+  execute(ctx: TransformationContext<S, T>): Promise<void> | void;
+}
+```
 
 -   No string `name` property is required.
     
@@ -81,7 +92,24 @@ Each step is a class implementing:
 
 Steps are registered with the engine along with their dependencies and metadata:
 
-`type StepCtor<S, T> = new () => PipelineStep<S, T>;  interface StepMetadata {   executionHint?: "lambda-only" | "step-functions-only" | "auto";   timing?: {     p50Ms?: number;  // optimistic estimate or learned metric     p99Ms?: number;  // pessimistic estimate or SLO-bound   };   // future: tags, ownership, cost profile, etc. }  interface RegisteredStep<S, T> {   ctor: StepCtor<S, T>;   dependsOn?: StepCtor<S, T>[];  // DAG edges using class references   meta?: StepMetadata; }`
+```ts
+type StepCtor<S, T> = new () => PipelineStep<S, T>;
+
+interface StepMetadata {
+  executionHint?: "lambda-only" | "step-functions-only" | "auto";
+  timing?: {
+    p50Ms?: number; // optimistic estimate or learned metric
+    p99Ms?: number; // pessimistic estimate or SLO-bound
+  };
+  // future: tags, ownership, cost profile, etc.
+}
+
+interface RegisteredStep<S, T> {
+  ctor: StepCtor<S, T>;
+  dependsOn?: StepCtor<S, T>[]; // DAG edges using class references
+  meta?: StepMetadata;
+}
+```
 
 Notes:
 
@@ -96,7 +124,9 @@ Notes:
 
 The core engine needs an execution plan (levels) derived from `RegisteredStep[]`.
 
-`function buildLevels<S, T>(   steps: RegisteredStep<S, T>[] ): RegisteredStep<S, T>[][];`
+```ts
+function buildLevels<S, T>(steps: RegisteredStep<S, T>[]): RegisteredStep<S, T>[][];
+```
 
 Responsibilities:
 
@@ -117,11 +147,30 @@ Responsibilities:
 
 Hooks allow monitoring, logging, metrics, etc:
 
-`interface PipelineHooks<S, T> {   beforePipeline?(ctx: TransformationContext<S, T>): void | Promise<void>;   afterPipeline?(result: PipelineResult<S, T>): void | Promise<void>;    beforeStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;   afterStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;    onError?(step: PipelineStep<S, T>, error: unknown, ctx: TransformationContext<S, T>): void | Promise<void>; }`
+```ts
+interface PipelineHooks<S, T> {
+  beforePipeline?(ctx: TransformationContext<S, T>): void | Promise<void>;
+  afterPipeline?(result: PipelineResult<S, T>): void | Promise<void>;
+  beforeStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;
+  afterStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;
+  onError?(step: PipelineStep<S, T>, error: unknown, ctx: TransformationContext<S, T>): void | Promise<void>;
+}
+```
 
 #### Result
 
-`type PipelineStatus = "success" | "stopped" | "error";  interface PipelineResult<S, T> {   status: PipelineStatus;   completedSteps: string[];   skippedSteps: string[];   errorStep?: string;   error?: unknown;   ctx: TransformationContext<S, T>; }`
+```ts
+type PipelineStatus = "success" | "stopped" | "error";
+
+interface PipelineResult<S, T> {
+  status: PipelineStatus;
+  completedSteps: string[];
+  skippedSteps: string[];
+  errorStep?: string;
+  error?: unknown;
+  ctx: TransformationContext<S, T>;
+}
+```
 
 -   `success`: all levels executed without error and `stopPipeline` was never set.
     
@@ -132,7 +181,13 @@ Hooks allow monitoring, logging, metrics, etc:
 
 #### Runner API
 
-`async function runPipeline<S, T>(   steps: RegisteredStep<S, T>[],   ctx: TransformationContext<S, T>,   hooks?: PipelineHooks<S, T> ): Promise<PipelineResult<S, T>>;`
+```ts
+async function runPipeline<S, T>(
+  steps: RegisteredStep<S, T>[],
+  ctx: TransformationContext<S, T>,
+  hooks?: PipelineHooks<S, T>
+): Promise<PipelineResult<S, T>>;
+```
 
 Behavior:
 
@@ -167,11 +222,31 @@ Implementation detail(s) like retry strategy are configurable and not hard-coded
 
 To support multiple external workflow formats (ASL, Arazzo, custom JSON/YAML), Virta uses an intermediate DAG structure.
 
-`type NodeId = string;  interface PipelineNodeDefinition {   id: NodeId;   type: "task" | "parallel" | "choice" | "pass";   dependsOn: NodeId[];   stepRef?: string;   // external id used to resolve TS steps via registry   config?: any;       // raw config for this node (ASL state, Arazzo step, etc.) }  interface PipelineDefinition {   nodes: PipelineNodeDefinition[];   entryNodes?: NodeId[]; }`
+```ts
+type NodeId = string;
+
+interface PipelineNodeDefinition {
+  id: NodeId;
+  type: "task" | "parallel" | "choice" | "pass";
+  dependsOn: NodeId[];
+  stepRef?: string; // external id used to resolve TS steps via registry
+  config?: any; // raw config for this node (ASL state, Arazzo step, etc.)
+}
+
+interface PipelineDefinition {
+  nodes: PipelineNodeDefinition[];
+  entryNodes?: NodeId[];
+}
+```
 
 Conversion to core:
 
-`function pipelineDefinitionToRegisteredSteps<S, T>(   def: PipelineDefinition,   registry: StepRegistry<S, T> ): RegisteredStep<S, T>[];`
+```ts
+function pipelineDefinitionToRegisteredSteps<S, T>(
+  def: PipelineDefinition,
+  registry: StepRegistry<S, T>
+): RegisteredStep<S, T>[];
+```
 
 Responsibilities:
 
@@ -187,7 +262,23 @@ Responsibilities:
 External formats (ASL, Arazzo, JSON configs) refer to steps via string IDs.  
 Virta resolves these to actual TypeScript step classes via a registry.
 
-``class StepRegistry<S, T> {   private map = new Map<string, StepCtor<S, T>>();    register(id: string, ctor: StepCtor<S, T>) {     this.map.set(id, ctor);   }    resolve(id: string): StepCtor<S, T> {     const ctor = this.map.get(id);     if (!ctor) {       throw new Error(`Unknown stepRef: ${id}`);     }     return ctor;   } }``
+```ts
+class StepRegistry<S, T> {
+  private map = new Map<string, StepCtor<S, T>>();
+
+  register(id: string, ctor: StepCtor<S, T>) {
+    this.map.set(id, ctor);
+  }
+
+  resolve(id: string): StepCtor<S, T> {
+    const ctor = this.map.get(id);
+    if (!ctor) {
+      throw new Error(`Unknown stepRef: ${id}`);
+    }
+    return ctor;
+  }
+}
+```
 
 -   Multiple modules/packages can contribute step registrations.
     
@@ -204,7 +295,19 @@ Package: `@virta/jsonata`.
 
 Example of a generic step that applies a JSONata expression:
 
-`class JsonataStep<S, T> implements PipelineStep<S, T> {   constructor(private expression: string) {}    async execute(ctx: TransformationContext<S, T>) {     const input = { source: ctx.source, target: ctx.target };      // pseudocode:     // const result = jsonata(this.expression).evaluate(input);     // ctx.target = merge(ctx.target, result);   } }`
+```ts
+class JsonataStep<S, T> implements PipelineStep<S, T> {
+  constructor(private expression: string) {}
+
+  async execute(ctx: TransformationContext<S, T>) {
+    const input = { source: ctx.source, target: ctx.target };
+
+    // pseudocode:
+    // const result = jsonata(this.expression).evaluate(input);
+    // ctx.target = merge(ctx.target, result);
+  }
+}
+```
 
 Possible extensions:
 
@@ -223,7 +326,9 @@ Package: `@virta/asl`.
 
 ### 5.1 ASL → `PipelineDefinition` (Import)
 
-`function aslToPipelineDefinition(aslJson: any): PipelineDefinition;`
+```ts
+function aslToPipelineDefinition(aslJson: any): PipelineDefinition;
+```
 
 Responsibilities:
 
@@ -260,7 +365,9 @@ Responsibilities:
 
 ### 5.2 `PipelineDefinition` → ASL (Export)
 
-`function pipelineDefinitionToAsl(def: PipelineDefinition): any; // returns ASL JSON`
+```ts
+function pipelineDefinitionToAsl(def: PipelineDefinition): any; // returns ASL JSON
+```
 
 Used for:
 
@@ -281,7 +388,12 @@ Package: `@virta/arazzo`.
 
 ### 6.1 Arazzo → `PipelineDefinition` (Import)
 
-`function arazzoToPipelineDefinition(   arazzoJson: any,   scenarioName: string ): PipelineDefinition;`
+```ts
+function arazzoToPipelineDefinition(
+  arazzoJson: any,
+  scenarioName: string
+): PipelineDefinition;
+```
 
 Mapping strategy:
 
@@ -315,7 +427,9 @@ Package: `@virta/bpmn`.
 
 ### 7.1 BPMN → `PipelineDefinition` (Import)
 
-`function bpmnToPipelineDefinition(bpmnXml: string): PipelineDefinition;`
+```ts
+function bpmnToPipelineDefinition(bpmnXml: string): PipelineDefinition;
+```
 
 Mapping strategy:
 
@@ -325,7 +439,9 @@ Mapping strategy:
 
 ### 7.2 `PipelineDefinition` → BPMN (Export)
 
-`function pipelineDefinitionToBpmn(def: PipelineDefinition): string; // BPMN XML`
+```ts
+function pipelineDefinitionToBpmn(def: PipelineDefinition): string; // BPMN XML
+```
 
 Use cases:
 
@@ -354,7 +470,14 @@ Package: `@virta/planner`.
 -   Configuration, for example:
     
 
-`interface PlannerConfig {   lambdaMaxMs: number;            // e.g. 12 * 60_000   defaultExecutionMode?: ExecutionMode; // fallback policy }  type ExecutionMode = "lambda" | "step-functions" | "hybrid";`
+```ts
+interface PlannerConfig {
+  lambdaMaxMs: number; // e.g. 12 * 60_000
+  defaultExecutionMode?: ExecutionMode; // fallback policy
+}
+
+type ExecutionMode = "lambda" | "step-functions" | "hybrid";
+```
 
 ### 7.2 Critical Path Computation
 
@@ -375,7 +498,13 @@ These estimates are used to decide which execution strategy is safe given Lambda
 
 ### 7.3 Decision Logic (High Level)
 
-`function planExecution(   def: PipelineDefinition,   metaByNodeId: Record<string, StepMetadata>,   config: PlannerConfig ): ExecutionMode;`
+```ts
+function planExecution(
+  def: PipelineDefinition,
+  metaByNodeId: Record<string, StepMetadata>,
+  config: PlannerConfig
+): ExecutionMode;
+```
 
 Suggested rules:
 
@@ -433,7 +562,15 @@ the Lambda runtime will:
 2.  Publish an event, for example via EventBridge:
     
 
-`{   "type": "step.timeout",   "pipelineId": "customer-onboarding",   "stepId": "GenerateBigReport",   "durationMs": 910000,   "lambdaRequestId": "..." }`
+```json
+{
+  "type": "step.timeout",
+  "pipelineId": "customer-onboarding",
+  "stepId": "GenerateBigReport",
+  "durationMs": 910000,
+  "lambdaRequestId": "..."
+}
+```
 
 The planner consumes these events and:
 
