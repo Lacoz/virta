@@ -81,7 +81,7 @@ To ship the current `@virta/core` build first, add the changeset noted above, th
 
 ### GitHub Actions release automation
 Releases can also run via CI with the `Release packages` workflow. On pushes to `main`, the workflow:
-- installs dependencies with pnpm, runs `pnpm -r lint` and `pnpm -r test`, and then invokes `changesets/action@v1` with `pnpm version:packages` / `pnpm release`.
+- installs dependencies with pnpm on Node.js 24, runs `pnpm -r lint` and `pnpm -r test`, and then invokes `changesets/action@v1` with `pnpm version:packages` / `pnpm release`.
 - uses `secrets.GITHUB_TOKEN` for both repository writes and publishing to `npm.pkg.github.com` (the `.npmrc` expects `GITHUB_TOKEN`).
 
 When there are unpublished changesets, the workflow opens a release PR. Merging that PR triggers the publish step to GitHub Packages with the updated versions and changelogs.
