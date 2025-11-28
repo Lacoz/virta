@@ -26,15 +26,16 @@ Virta can be exposed through an MCP server so LLM tools and IDE agents can intro
 - Suggested package name: `@virta/mcp-server`.
 
 ## Repository layout (proposed)
-Monorepo packages are organized to keep the core runtime separate from format adapters and infra tooling:
-- `packages/virta-core` — DAG engine (`TransformationContext`, `PipelineStep`, `buildLevels`, `runPipeline`).
-- `packages/virta-registry` — registration utilities and `PipelineDefinition` conversion helpers.
-- `packages/virta-jsonata` — JSONata helpers for step-level transformations.
-- `packages/virta-asl`, `packages/virta-arazzo`, `packages/virta-bpmn` — import/export adapters for ASL, Arazzo, and BPMN.
-- `packages/virta-planner` — critical path analysis and execution mode selection.
-- `packages/virta-cdk` — CDK/projen infrastructure generators for Lambda/Step Functions deployments.
-- `packages/virta-mcp-server` — MCP tooling surface for pipelines.
-- `packages/virta-examples` — sample pipelines and demos.
+Monorepo packages are organized to keep the core runtime separate from format adapters and infra tooling (scoped packages prefa
+ced with `@virta/`):
+- `packages/@virta/core` — DAG engine (`TransformationContext`, `PipelineStep`, `buildLevels`, `runPipeline`).
+- `packages/@virta/registry` — registration utilities and `PipelineDefinition` conversion helpers.
+- `packages/@virta/jsonata` — JSONata helpers for step-level transformations.
+- `packages/@virta/asl`, `packages/@virta/arazzo`, `packages/@virta/bpmn` — import/export adapters for ASL, Arazzo, and BPMN.
+- `packages/@virta/planner` — critical path analysis and execution mode selection.
+- `packages/@virta/cdk` — CDK/projen infrastructure generators for Lambda/Step Functions deployments.
+- `packages/@virta/mcp-server` — MCP tooling surface for pipelines.
+- `packages/@virta/examples` — sample pipelines and demos.
 
 ## Development environment
 Use the devcontainer for isolated, least-privilege development:

@@ -171,16 +171,16 @@ Top-level repo name: `virta` (or `virta-flow` if needed for uniqueness).
 ```
 virta/
   packages/
-    virta-core/        # core DAG engine (ctx, PipelineStep, buildLevels, runPipeline)
-    virta-registry/    # StepRegistry, PipelineDefinition <-> RegisteredStep utils
-    virta-jsonata/     # JSONata-based steps and helpers
-    virta-asl/         # ASL <-> PipelineDefinition import/export
-    virta-arazzo/      # Arazzo <-> PipelineDefinition import/export
-    virta-bpmn/        # BPMN <-> PipelineDefinition export/import helpers
-    virta-planner/     # critical path, timing, ExecutionMode decisions
-    virta-cdk/         # CDK/projen-based infra generators
-    virta-mcp-server/  # MCP server exposing Virta as tools
-    virta-examples/    # example pipelines, AWS demos, docs samples
+    @virta/core           # core DAG engine (ctx, PipelineStep, buildLevels, runPipeline)
+    @virta/registry       # StepRegistry, PipelineDefinition <-> RegisteredStep utils
+    @virta/jsonata        # JSONata-based steps and helpers
+    @virta/asl            # ASL <-> PipelineDefinition import/export
+    @virta/arazzo         # Arazzo <-> PipelineDefinition import/export
+    @virta/bpmn           # BPMN <-> PipelineDefinition export/import helpers
+    @virta/planner        # critical path, timing, ExecutionMode decisions
+    @virta/cdk            # CDK/projen-based infra generators
+    @virta/mcp-server     # MCP server exposing Virta as tools
+    @virta/examples       # example pipelines, AWS demos, docs samples
 ```
 
 Build / tooling (to be decided):
