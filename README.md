@@ -56,3 +56,8 @@ Use the devcontainer for isolated, least-privilege development:
 - Node.js **24 LTS** base image with pnpm available.
 - Security flags keep the container non-root with `cap-drop=ALL` and `no-new-privileges` by default.
 - Recommended extensions: ESLint, Prettier, and workspace trust enabled for TypeScript tooling.
+
+### Workspace scripts (pnpm)
+- `pnpm install` to restore dependencies.
+- `pnpm -r build` / `pnpm -r lint` to build and type-check all packages.
+- `pnpm -r test` to run package-level test suites (e.g., `@virta/core`).
