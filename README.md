@@ -12,6 +12,7 @@ Virta intentionally supports multiple representations so teams can exchange work
 - **Amazon States Language (ASL)** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)) import/export.
 - **Arazzo** ([spec](https://spec.openapis.org/arazzo/v1.0.0)) import/export.
 - **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) process import/export to interoperate with BPM tools while preserving DAG semantics.
+- **TypeScript** procedural code generation and parsing (export/import with DAG validation).
 - **JSONata** ([docs](https://jsonata.org/)) for inside-step transformations.
 
 ### Workflow compatibility matrix
@@ -37,7 +38,7 @@ An execution planner selects the right deployment model per pipeline:
 
 ## MCP server (optional)
 Virta can be exposed through an MCP server so LLM tools and IDE agents can introspect and operate pipelines:
-- Tools include listing pipelines, retrieving definitions, previewing plans, running pipelines, and exporting/importing ASL, Arazzo, or BPMN.
+- Tools include listing pipelines, retrieving definitions, previewing plans, running pipelines, and exporting/importing ASL, Arazzo, BPMN, or TypeScript.
 - Suggested package name: `@virta/mcp-server`.
 
 ## Repository layout (proposed)
@@ -46,6 +47,7 @@ Monorepo packages are organized to keep the core runtime separate from format ad
 - `packages/registry` (`@virta/registry`) — registration utilities and `PipelineDefinition` conversion helpers.
 - `packages/jsonata` (`@virta/jsonata`) — JSONata helpers for step-level transformations.
 - `packages/asl`, `packages/arazzo`, `packages/bpmn` (`@virta/asl`, `@virta/arazzo`, `@virta/bpmn`) — import/export adapters for ASL, Arazzo, and BPMN.
+- `packages/ts-codegen` (`@virta/ts-codegen`) — TypeScript code generation and parsing with DAG validation.
 - `packages/planner` (`@virta/planner`) — critical path analysis and execution mode selection.
 - `packages/cdk` (`@virta/cdk`) — CDK/projen infrastructure generators for Lambda/Step Functions deployments.
 - `packages/mcp-server` (`@virta/mcp-server`) — MCP tooling surface for pipelines.

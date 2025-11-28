@@ -16,6 +16,8 @@ It provides:
 
     -   **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) for process import/export mapped to DAG semantics,
 
+    -   **TypeScript** procedural code generation and parsing (export/import),
+
     -   **JSONata** ([docs](https://jsonata.org/)) inside-step transformations,
         
 -   an **execution planner** that can decide between:
@@ -453,13 +455,56 @@ Use cases:
 -   The BPMN adapter should ship **fixtures and validators** that cover tasks, parallel/exclusive gateways, timers, and error handlers aligned with the workflow compatibility matrix in `README.md`.
 -   Warnings should surface when BPMN-specific constructs (e.g., ad-hoc subprocesses, event subprocesses, message correlations) cannot map cleanly to DAG semantics.
 
-## 8. Execution Planner (Lambda vs Step Functions vs Hybrid)
+## 8. TypeScript Code Generation
+
+Virta supports **export and import** of workflows as **procedural TypeScript code**.
+
+Package: `@virta/ts-codegen`.
+
+### 8.1 `PipelineDefinition` → TypeScript (Export)
+
+Generates TypeScript source code from a `PipelineDefinition`:
+
+- Step class definitions (stubs, JSONata-based, or empty implementations)
+- Pipeline definition with `RegisteredStep[]`
+- Ready-to-run TypeScript code with proper imports
+
+The generated code includes:
+- Type-safe step classes implementing `PipelineStep<S, T>`
+- Pipeline definition object
+- Helper function to run the pipeline
+- Proper dependency relationships between steps
+
+### 8.2 TypeScript → `PipelineDefinition` (Import)
+
+Parses TypeScript files back to `PipelineDefinition` using the TypeScript Compiler API:
+
+- Extracts step classes and their dependencies
+- Validates that the code represents a valid DAG (no cycles, valid dependencies)
+- Maps step class names to node IDs via JSDoc comments
+
+The import function automatically validates:
+- All dependencies reference existing nodes
+- No cycles in the dependency graph (using Kahn's algorithm and DFS)
+- Proper error messages with cycle details if validation fails
+
+### 8.3 Round-Trip Fidelity
+
+TypeScript code generation preserves:
+- ✅ DAG structure and dependencies
+- ✅ Step metadata (timing, execution hints)
+- ✅ Node types (task, parallel, choice, pass)
+- ✅ Entry nodes
+
+Custom step implementations can be added to generated code, and the code can be parsed back to `PipelineDefinition` for conversion to other formats (ASL, Arazzo, BPMN).
+
+## 9. Execution Planner (Lambda vs Step Functions vs Hybrid)
 
 The **planner** decides how a given Virta pipeline should run in AWS.
 
 Package: `@virta/planner`.
 
-### 7.1 Inputs
+### 9.1 Inputs
 
 -   `PipelineDefinition` + `StepMetadata` per node/step.
     
@@ -479,7 +524,7 @@ interface PlannerConfig {
 type ExecutionMode = "lambda" | "step-functions" | "hybrid";
 ```
 
-### 7.2 Critical Path Computation
+### 9.2 Critical Path Computation
 
 The planner computes:
 
@@ -496,7 +541,7 @@ The planner computes:
 
 These estimates are used to decide which execution strategy is safe given Lambda time limits and reliability constraints.
 
-### 7.3 Decision Logic (High Level)
+### 9.3 Decision Logic (High Level)
 
 ```ts
 function planExecution(
@@ -533,7 +578,7 @@ Suggested rules:
         -   which nodes belong to Lambda vs Step Functions.
             
 
-## 9. Runtime Timeout Handling (Lambda Runtime)
+## 10. Runtime Timeout Handling (Lambda Runtime)
 
 When Virta pipelines run **inside AWS Lambda**, the runner uses hooks to measure step runtimes:
 
@@ -581,7 +626,7 @@ The planner consumes these events and:
 -   can trigger infra migration (Lambda → Step Functions, or vice versa).
     
 
-## 10. Infrastructure Regeneration (CDK / projen)
+## 11. Infrastructure Regeneration (CDK / projen)
 
 Virta does **not** embed AWS-specific logic directly in the core engine.  
 Instead, an integration package uses **AWS CDK** (optionally with **projen**) to generate infra stacks based on planner decisions.
@@ -626,7 +671,7 @@ the CDK generator can produce:
     -   Step Functions executes remaining nodes.
         
 
-### 9.2 Planner + Infra Integration
+### 11.2 Planner + Infra Integration
 
 A possible workflow:
 
@@ -643,13 +688,13 @@ A possible workflow:
 
 The exact automation level (auto PR vs auto deploy) is configurable and outside the core engine.
 
-## 11. MCP Server (Optional)
+## 12. MCP Server (Optional)
 
 Virta can be exposed via an **MCP server** so LLM tools and IDE agents can introspect and operate on pipelines.
 
 Package: `@virta/mcp-server`.
 
-### 10.1 Example MCP Tools
+### 12.1 Example MCP Tools
 
 -   `list_pipelines`  
     Returns available pipeline IDs and metadata.
@@ -675,8 +720,11 @@ Package: `@virta/mcp-server`.
 
 -   `export_bpmn`
     Returns BPMN 2.0 XML for a pipeline.
-
--   `import_asl` / `import_arazzo` / `import_bpmn`
+    
+-   `export_typescript`
+    Returns TypeScript source code for a pipeline.
+    
+-   `import_asl` / `import_arazzo` / `import_bpmn` / `import_typescript`
     Register or update Virta pipelines from external specs.
     
 
@@ -689,7 +737,7 @@ This allows:
 -   Execution and testing from within IDEs or AI tooling.
     
 
-## 12. Suggested Monorepo Layout
+## 13. Suggested Monorepo Layout
 
 Top-level repo name: `virta` (or `virta-flow` if needed for uniqueness). Directory names remain unscoped (`packages/core`), while `package.json` names use the scoped `@virta/*` convention that matches common TypeScript/Node package naming.
 
@@ -702,6 +750,7 @@ virta/
     asl/          # package name @virta/asl — ASL <-> PipelineDefinition import/export
     arazzo/       # package name @virta/arazzo — Arazzo <-> PipelineDefinition import/export
     bpmn/         # package name @virta/bpmn — BPMN <-> PipelineDefinition import/export with validators
+    ts-codegen/   # package name @virta/ts-codegen — TypeScript code generation and parsing
     planner/      # package name @virta/planner — critical path, timing, ExecutionMode decisions
     cdk/          # package name @virta/cdk — CDK/projen-based infra generators
     mcp-server/   # package name @virta/mcp-server — MCP server exposing Virta as tools
@@ -719,7 +768,7 @@ Build / tooling (to be decided):
 -   Infra code generation: `projen` + `aws-cdk`.
     
 
-## 13. Open Decisions (for Future Design Discussion)
+## 14. Open Decisions (for Future Design Discussion)
 
 These aspects are **intentionally left open** so they can be decided later:
 

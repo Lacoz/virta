@@ -1,0 +1,34 @@
+{
+  "name": "@virta/ts-codegen",
+  "version": "0.0.1",
+  "description": "TypeScript code generation and parsing for Virta pipelines",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.mts"
+  },
+  "dependencies": {
+    "@virta/core": "workspace:*",
+    "@virta/registry": "workspace:*",
+    "@virta/jsonata": "workspace:*",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "vitest": "^4.0.14"
+  }
+}
+

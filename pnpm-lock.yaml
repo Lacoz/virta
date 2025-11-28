@@ -110,6 +110,9 @@ importers:
       '@virta/registry':
         specifier: workspace:*
         version: link:../registry
+      '@virta/ts-codegen':
+        specifier: workspace:*
+        version: link:../ts-codegen
     devDependencies:
       '@types/node':
         specifier: ^24.10.1
@@ -208,6 +211,28 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^4.0.14
+        version: 4.0.14(@types/node@24.10.1)(tsx@4.20.6)(yaml@2.8.1)
+
+  packages/ts-codegen:
+    dependencies:
+      '@virta/core':
+        specifier: workspace:*
+        version: link:../core
+      '@virta/jsonata':
+        specifier: workspace:*
+        version: link:../jsonata
+      '@virta/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.10.1
       vitest:
         specifier: ^4.0.14
         version: 4.0.14(@types/node@24.10.1)(tsx@4.20.6)(yaml@2.8.1)
