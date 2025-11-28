@@ -52,10 +52,6 @@ Monorepo packages are organized to keep the core runtime separate from format ad
 - `packages/examples` (`@virta/examples`) — sample pipelines and demos.
 
 ## Development environment
-Use the devcontainer for isolated, least-privilege development:
-- Node.js **24 LTS** base image with pnpm available.
-- Security flags keep the container non-root with `cap-drop=ALL` and `no-new-privileges` by default.
-- Recommended extensions: ESLint, Prettier, and workspace trust enabled for TypeScript tooling.
 
 ### Workspace scripts (pnpm)
 - `pnpm install` to restore dependencies.
