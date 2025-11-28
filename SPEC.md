@@ -8,26 +8,44 @@ It provides:
     
 -   **parallel step execution** of independent steps,
     
--   support for **multiple workflow definition formats**:
-    
-    -   JSONata (inside-step transformations),
-        
-    -   Amazon States Language (ASL),
-        
-    -   Arazzo (OpenAPI-based API workflows),
+-   support for **multiple workflow definition formats** (import/export unless noted):
+
+    -   **Amazon States Language (ASL)** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)),
+
+    -   **Arazzo** ([spec](https://spec.openapis.org/arazzo/v1.0.0)),
+
+    -   **BPMN 2.0** ([OMG spec](https://www.omg.org/spec/BPMN/2.0)) for process import/export mapped to DAG semantics,
+
+    -   **JSONata** ([docs](https://jsonata.org/)) inside-step transformations,
         
 -   an **execution planner** that can decide between:
-    
+
     -   inline **AWS Lambda** execution,
-        
+
     -   **AWS Step Functions**,
-        
+
     -   or a **hybrid** split (part Lambda, part Step Functions),
-        
+
 -   an optional **MCP server** so LLM tools (ChatGPT, IDE agents…) can inspect, plan, and execute pipelines.
-    
+
 
 > **Name**: _Virta_ — Finnish for _flow / current_.
+
+## Workflow compatibility matrix (import/export fidelity)
+
+| Capability / Feature                          | ASL (AWS Step Functions) | Arazzo                           | BPMN 2.0                                  |
+|-----------------------------------------------|--------------------------|----------------------------------|-------------------------------------------|
+| DAG task graph (steps + dependencies)         | ✅ Full                  | ✅ Full                          | ✅ Full (tasks/gateways mapped to DAG nodes) |
+| Parallel branches                             | ✅ Parallel state        | ✅ `parallel` block              | ✅ Parallel gateways                       |
+| Conditional choice                            | ✅ Choice state          | ✅ `switch`/`when`               | ✅ Exclusive gateways                      |
+| Loop/repeat constructs                        | ⚠️ Limited (`Map`, `Retry`) | ⚠️ Limited (`loop` / bounded)    | ⚠️ Limited (bounded loops; no unbounded `while`)   |
+| Timers / waits                                | ✅ Wait state            | ✅ `sleep`                       | ✅ Intermediate timer events               |
+| Error handling & retries                      | ✅ `Catch` / `Retry`      | ✅ `on_error`                     | ✅ Boundary events (mapped to retries/compensation) |
+| Data mapping / expressions                    | ✅ Pass/Parameters       | ✅ Inputs/Outputs (JSONata)      | ✅ Data objects (JSONata inside tasks)     |
+| Human tasks / forms                           | ❌ Not modeled           | ❌ Not modeled                   | ⚠️ Partial (import/export only for service tasks)  |
+| Vendor-specific extensions                    | ⚠️ Partial (`States.*`)  | ⚠️ Partial (custom blocks)       | ⚠️ Partial (drops non-mappable extensions)         |
+
+Round-trip intent: import/export fidelity is measured against this matrix; unsupported elements are dropped or downgraded with explicit warnings. Each adapter package ships fixtures and validators to flag gaps when formats evolve.
 
 ## 1\. Core: TypeScript DAG Pipeline Engine
 
@@ -37,7 +55,14 @@ It provides:
 
 Shared, mutable context passed to all steps:
 
-`type TransformationContext<S, T> = {   source: S;   target: T;   stopPipeline?: boolean;   error?: unknown; };`
+```ts
+type TransformationContext<S, T> = {
+  source: S;
+  target: T;
+  stopPipeline?: boolean;
+  error?: unknown;
+};
+```
 
 -   `source`: original input entity (e.g. `Account`, `Event`, `Message`).
     
@@ -52,7 +77,11 @@ Shared, mutable context passed to all steps:
 
 Each step is a class implementing:
 
-`interface PipelineStep<S, T> {   execute(ctx: TransformationContext<S, T>): Promise<void> | void; }`
+```ts
+interface PipelineStep<S, T> {
+  execute(ctx: TransformationContext<S, T>): Promise<void> | void;
+}
+```
 
 -   No string `name` property is required.
     
@@ -63,7 +92,24 @@ Each step is a class implementing:
 
 Steps are registered with the engine along with their dependencies and metadata:
 
-`type StepCtor<S, T> = new () => PipelineStep<S, T>;  interface StepMetadata {   executionHint?: "lambda-only" | "step-functions-only" | "auto";   timing?: {     p50Ms?: number;  // optimistic estimate or learned metric     p99Ms?: number;  // pessimistic estimate or SLO-bound   };   // future: tags, ownership, cost profile, etc. }  interface RegisteredStep<S, T> {   ctor: StepCtor<S, T>;   dependsOn?: StepCtor<S, T>[];  // DAG edges using class references   meta?: StepMetadata; }`
+```ts
+type StepCtor<S, T> = new () => PipelineStep<S, T>;
+
+interface StepMetadata {
+  executionHint?: "lambda-only" | "step-functions-only" | "auto";
+  timing?: {
+    p50Ms?: number; // optimistic estimate or learned metric
+    p99Ms?: number; // pessimistic estimate or SLO-bound
+  };
+  // future: tags, ownership, cost profile, etc.
+}
+
+interface RegisteredStep<S, T> {
+  ctor: StepCtor<S, T>;
+  dependsOn?: StepCtor<S, T>[]; // DAG edges using class references
+  meta?: StepMetadata;
+}
+```
 
 Notes:
 
@@ -78,7 +124,9 @@ Notes:
 
 The core engine needs an execution plan (levels) derived from `RegisteredStep[]`.
 
-`function buildLevels<S, T>(   steps: RegisteredStep<S, T>[] ): RegisteredStep<S, T>[][];`
+```ts
+function buildLevels<S, T>(steps: RegisteredStep<S, T>[]): RegisteredStep<S, T>[][];
+```
 
 Responsibilities:
 
@@ -99,11 +147,30 @@ Responsibilities:
 
 Hooks allow monitoring, logging, metrics, etc:
 
-`interface PipelineHooks<S, T> {   beforePipeline?(ctx: TransformationContext<S, T>): void | Promise<void>;   afterPipeline?(result: PipelineResult<S, T>): void | Promise<void>;    beforeStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;   afterStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;    onError?(step: PipelineStep<S, T>, error: unknown, ctx: TransformationContext<S, T>): void | Promise<void>; }`
+```ts
+interface PipelineHooks<S, T> {
+  beforePipeline?(ctx: TransformationContext<S, T>): void | Promise<void>;
+  afterPipeline?(result: PipelineResult<S, T>): void | Promise<void>;
+  beforeStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;
+  afterStep?(step: PipelineStep<S, T>, ctx: TransformationContext<S, T>): void | Promise<void>;
+  onError?(step: PipelineStep<S, T>, error: unknown, ctx: TransformationContext<S, T>): void | Promise<void>;
+}
+```
 
 #### Result
 
-`type PipelineStatus = "success" | "stopped" | "error";  interface PipelineResult<S, T> {   status: PipelineStatus;   completedSteps: string[];   skippedSteps: string[];   errorStep?: string;   error?: unknown;   ctx: TransformationContext<S, T>; }`
+```ts
+type PipelineStatus = "success" | "stopped" | "error";
+
+interface PipelineResult<S, T> {
+  status: PipelineStatus;
+  completedSteps: string[];
+  skippedSteps: string[];
+  errorStep?: string;
+  error?: unknown;
+  ctx: TransformationContext<S, T>;
+}
+```
 
 -   `success`: all levels executed without error and `stopPipeline` was never set.
     
@@ -114,7 +181,13 @@ Hooks allow monitoring, logging, metrics, etc:
 
 #### Runner API
 
-`async function runPipeline<S, T>(   steps: RegisteredStep<S, T>[],   ctx: TransformationContext<S, T>,   hooks?: PipelineHooks<S, T> ): Promise<PipelineResult<S, T>>;`
+```ts
+async function runPipeline<S, T>(
+  steps: RegisteredStep<S, T>[],
+  ctx: TransformationContext<S, T>,
+  hooks?: PipelineHooks<S, T>
+): Promise<PipelineResult<S, T>>;
+```
 
 Behavior:
 
@@ -149,11 +222,31 @@ Implementation detail(s) like retry strategy are configurable and not hard-coded
 
 To support multiple external workflow formats (ASL, Arazzo, custom JSON/YAML), Virta uses an intermediate DAG structure.
 
-`type NodeId = string;  interface PipelineNodeDefinition {   id: NodeId;   type: "task" | "parallel" | "choice" | "pass";   dependsOn: NodeId[];   stepRef?: string;   // external id used to resolve TS steps via registry   config?: any;       // raw config for this node (ASL state, Arazzo step, etc.) }  interface PipelineDefinition {   nodes: PipelineNodeDefinition[];   entryNodes?: NodeId[]; }`
+```ts
+type NodeId = string;
+
+interface PipelineNodeDefinition {
+  id: NodeId;
+  type: "task" | "parallel" | "choice" | "pass";
+  dependsOn: NodeId[];
+  stepRef?: string; // external id used to resolve TS steps via registry
+  config?: any; // raw config for this node (ASL state, Arazzo step, etc.)
+}
+
+interface PipelineDefinition {
+  nodes: PipelineNodeDefinition[];
+  entryNodes?: NodeId[];
+}
+```
 
 Conversion to core:
 
-`function pipelineDefinitionToRegisteredSteps<S, T>(   def: PipelineDefinition,   registry: StepRegistry<S, T> ): RegisteredStep<S, T>[];`
+```ts
+function pipelineDefinitionToRegisteredSteps<S, T>(
+  def: PipelineDefinition,
+  registry: StepRegistry<S, T>
+): RegisteredStep<S, T>[];
+```
 
 Responsibilities:
 
@@ -169,7 +262,23 @@ Responsibilities:
 External formats (ASL, Arazzo, JSON configs) refer to steps via string IDs.  
 Virta resolves these to actual TypeScript step classes via a registry.
 
-``class StepRegistry<S, T> {   private map = new Map<string, StepCtor<S, T>>();    register(id: string, ctor: StepCtor<S, T>) {     this.map.set(id, ctor);   }    resolve(id: string): StepCtor<S, T> {     const ctor = this.map.get(id);     if (!ctor) {       throw new Error(`Unknown stepRef: ${id}`);     }     return ctor;   } }``
+```ts
+class StepRegistry<S, T> {
+  private map = new Map<string, StepCtor<S, T>>();
+
+  register(id: string, ctor: StepCtor<S, T>) {
+    this.map.set(id, ctor);
+  }
+
+  resolve(id: string): StepCtor<S, T> {
+    const ctor = this.map.get(id);
+    if (!ctor) {
+      throw new Error(`Unknown stepRef: ${id}`);
+    }
+    return ctor;
+  }
+}
+```
 
 -   Multiple modules/packages can contribute step registrations.
     
@@ -180,13 +289,25 @@ Virta resolves these to actual TypeScript step classes via a registry.
 
 JSONata is used as **an expression language inside steps**, not as a workflow DSL.
 
-Package: `@virta/jsonata` (suggested name: `virta-jsonata`).
+Package: `@virta/jsonata`.
 
 ### 4.1 JSONata-Based Step
 
 Example of a generic step that applies a JSONata expression:
 
-`class JsonataStep<S, T> implements PipelineStep<S, T> {   constructor(private expression: string) {}    async execute(ctx: TransformationContext<S, T>) {     const input = { source: ctx.source, target: ctx.target };      // pseudocode:     // const result = jsonata(this.expression).evaluate(input);     // ctx.target = merge(ctx.target, result);   } }`
+```ts
+class JsonataStep<S, T> implements PipelineStep<S, T> {
+  constructor(private expression: string) {}
+
+  async execute(ctx: TransformationContext<S, T>) {
+    const input = { source: ctx.source, target: ctx.target };
+
+    // pseudocode:
+    // const result = jsonata(this.expression).evaluate(input);
+    // ctx.target = merge(ctx.target, result);
+  }
+}
+```
 
 Possible extensions:
 
@@ -199,13 +320,15 @@ Possible extensions:
 
 ## 5\. Amazon States Language (ASL) Integration
 
-Virta supports **import and export** of workflows defined in **Amazon States Language**.
+Virta supports **import and export** of workflows defined in **Amazon States Language** ([docs](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html)).
 
-Package: `@virta/asl` (suggested: `virta-asl`).
+Package: `@virta/asl`.
 
 ### 5.1 ASL → `PipelineDefinition` (Import)
 
-`function aslToPipelineDefinition(aslJson: any): PipelineDefinition;`
+```ts
+function aslToPipelineDefinition(aslJson: any): PipelineDefinition;
+```
 
 Responsibilities:
 
@@ -242,7 +365,9 @@ Responsibilities:
 
 ### 5.2 `PipelineDefinition` → ASL (Export)
 
-`function pipelineDefinitionToAsl(def: PipelineDefinition): any; // returns ASL JSON`
+```ts
+function pipelineDefinitionToAsl(def: PipelineDefinition): any; // returns ASL JSON
+```
 
 Used for:
 
@@ -255,15 +380,20 @@ Implementation details (e.g., how to map custom node types to ASL patterns) can 
 
 ## 6\. Arazzo Integration
 
-[Arazzo](https://spec.openapis.org/arazzo/v1.0.1.html) defines workflows over OpenAPI operations.
+[Arazzo](https://spec.openapis.org/arazzo/v1.0.0) defines workflows over OpenAPI operations.
 
 Virta uses Arazzo as another **full workflow specification format**.
 
-Package: `@virta/arazzo` (suggested: `virta-arazzo`).
+Package: `@virta/arazzo`.
 
 ### 6.1 Arazzo → `PipelineDefinition` (Import)
 
-`function arazzoToPipelineDefinition(   arazzoJson: any,   scenarioName: string ): PipelineDefinition;`
+```ts
+function arazzoToPipelineDefinition(
+  arazzoJson: any,
+  scenarioName: string
+): PipelineDefinition;
+```
 
 Mapping strategy:
 
@@ -289,11 +419,45 @@ Optionally Virta can export its internal DAG to Arazzo to:
 -   Allow external tools to consume Virta workflows via standardized formats.
     
 
-## 7\. Execution Planner (Lambda vs Step Functions vs Hybrid)
+## 7. BPMN 2.0 Integration
+
+[BPMN 2.0](https://www.omg.org/spec/BPMN/2.0) is supported for **import/export** to interoperate with business process tooling while preserving DAG semantics.
+
+Package: `@virta/bpmn`.
+
+### 7.1 BPMN → `PipelineDefinition` (Import)
+
+```ts
+function bpmnToPipelineDefinition(bpmnXml: string): PipelineDefinition;
+```
+
+Mapping strategy:
+
+-   Parse the BPMN XML model and identify **tasks** (service/user tasks mapped to `"task"`) and **gateways** (exclusive/parallel mapped to `"choice"`/`"parallel"`).
+-   Translate sequence flows into `dependsOn` relationships, preserving branch joins and splits.
+-   Carry over data objects or extension elements into `config` for downstream adapters.
+
+### 7.2 `PipelineDefinition` → BPMN (Export)
+
+```ts
+function pipelineDefinitionToBpmn(def: PipelineDefinition): string; // BPMN XML
+```
+
+Use cases:
+
+-   Enable BPMN-native visualization and documentation of Virta DAGs.
+-   Round-trip pipelines where non-mappable extensions are dropped with warnings.
+
+### 7.3 Round-Trip Validation
+
+-   The BPMN adapter should ship **fixtures and validators** that cover tasks, parallel/exclusive gateways, timers, and error handlers aligned with the workflow compatibility matrix in `README.md`.
+-   Warnings should surface when BPMN-specific constructs (e.g., ad-hoc subprocesses, event subprocesses, message correlations) cannot map cleanly to DAG semantics.
+
+## 8. Execution Planner (Lambda vs Step Functions vs Hybrid)
 
 The **planner** decides how a given Virta pipeline should run in AWS.
 
-Package: `@virta/planner` (suggested: `virta-planner`).
+Package: `@virta/planner`.
 
 ### 7.1 Inputs
 
@@ -306,7 +470,14 @@ Package: `@virta/planner` (suggested: `virta-planner`).
 -   Configuration, for example:
     
 
-`interface PlannerConfig {   lambdaMaxMs: number;            // e.g. 12 * 60_000   defaultExecutionMode?: ExecutionMode; // fallback policy }  type ExecutionMode = "lambda" | "step-functions" | "hybrid";`
+```ts
+interface PlannerConfig {
+  lambdaMaxMs: number; // e.g. 12 * 60_000
+  defaultExecutionMode?: ExecutionMode; // fallback policy
+}
+
+type ExecutionMode = "lambda" | "step-functions" | "hybrid";
+```
 
 ### 7.2 Critical Path Computation
 
@@ -327,7 +498,13 @@ These estimates are used to decide which execution strategy is safe given Lambda
 
 ### 7.3 Decision Logic (High Level)
 
-`function planExecution(   def: PipelineDefinition,   metaByNodeId: Record<string, StepMetadata>,   config: PlannerConfig ): ExecutionMode;`
+```ts
+function planExecution(
+  def: PipelineDefinition,
+  metaByNodeId: Record<string, StepMetadata>,
+  config: PlannerConfig
+): ExecutionMode;
+```
 
 Suggested rules:
 
@@ -356,7 +533,7 @@ Suggested rules:
         -   which nodes belong to Lambda vs Step Functions.
             
 
-## 8\. Runtime Timeout Handling (Lambda Runtime)
+## 9. Runtime Timeout Handling (Lambda Runtime)
 
 When Virta pipelines run **inside AWS Lambda**, the runner uses hooks to measure step runtimes:
 
@@ -385,7 +562,15 @@ the Lambda runtime will:
 2.  Publish an event, for example via EventBridge:
     
 
-`{   "type": "step.timeout",   "pipelineId": "customer-onboarding",   "stepId": "GenerateBigReport",   "durationMs": 910000,   "lambdaRequestId": "..." }`
+```json
+{
+  "type": "step.timeout",
+  "pipelineId": "customer-onboarding",
+  "stepId": "GenerateBigReport",
+  "durationMs": 910000,
+  "lambdaRequestId": "..."
+}
+```
 
 The planner consumes these events and:
 
@@ -396,12 +581,12 @@ The planner consumes these events and:
 -   can trigger infra migration (Lambda → Step Functions, or vice versa).
     
 
-## 9\. Infrastructure Regeneration (CDK / projen)
+## 10. Infrastructure Regeneration (CDK / projen)
 
 Virta does **not** embed AWS-specific logic directly in the core engine.  
 Instead, an integration package uses **AWS CDK** (optionally with **projen**) to generate infra stacks based on planner decisions.
 
-Package: `@virta/cdk` (suggested: `virta-cdk`).
+Package: `@virta/cdk`.
 
 ### 9.1 Modes
 
@@ -458,11 +643,11 @@ A possible workflow:
 
 The exact automation level (auto PR vs auto deploy) is configurable and outside the core engine.
 
-## 10\. MCP Server (Optional)
+## 11. MCP Server (Optional)
 
 Virta can be exposed via an **MCP server** so LLM tools and IDE agents can introspect and operate on pipelines.
 
-Package: `@virta/mcp-server` (suggested: `virta-mcp-server`).
+Package: `@virta/mcp-server`.
 
 ### 10.1 Example MCP Tools
 
@@ -485,10 +670,13 @@ Package: `@virta/mcp-server` (suggested: `virta-mcp-server`).
 -   `export_asl`  
     Returns ASL JSON for a pipeline.
     
--   `export_arazzo`  
+-   `export_arazzo`
     Returns Arazzo scenario JSON/YAML.
-    
--   `import_asl` / `import_arazzo`  
+
+-   `export_bpmn`
+    Returns BPMN 2.0 XML for a pipeline.
+
+-   `import_asl` / `import_arazzo` / `import_bpmn`
     Register or update Virta pipelines from external specs.
     
 
@@ -501,11 +689,24 @@ This allows:
 -   Execution and testing from within IDEs or AI tooling.
     
 
-## 11\. Suggested Monorepo Layout
+## 12. Suggested Monorepo Layout
 
-Top-level repo name: `virta` (or `virta-flow` if needed for uniqueness).
+Top-level repo name: `virta` (or `virta-flow` if needed for uniqueness). Directory names remain unscoped (`packages/core`), while `package.json` names use the scoped `@virta/*` convention that matches common TypeScript/Node package naming.
 
-`virta/   packages/     virta-core/        # core DAG engine (ctx, PipelineStep, buildLevels, runPipeline)     virta-registry/    # StepRegistry, PipelineDefinition <-> RegisteredStep utils     virta-jsonata/     # JSONata-based steps and helpers     virta-asl/         # ASL <-> PipelineDefinition import/export     virta-arazzo/      # Arazzo <-> PipelineDefinition import/export     virta-planner/     # critical path, timing, ExecutionMode decisions     virta-cdk/         # CDK/projen-based infra generators     virta-mcp-server/  # MCP server exposing Virta as tools     virta-examples/    # example pipelines, AWS demos, docs samples`
+```
+virta/
+  packages/
+    core/         # package name @virta/core — core DAG engine (ctx, PipelineStep, buildLevels, runPipeline)
+    registry/     # package name @virta/registry — StepRegistry, PipelineDefinition <-> RegisteredStep utils
+    jsonata/      # package name @virta/jsonata — JSONata-based steps and helpers
+    asl/          # package name @virta/asl — ASL <-> PipelineDefinition import/export
+    arazzo/       # package name @virta/arazzo — Arazzo <-> PipelineDefinition import/export
+    bpmn/         # package name @virta/bpmn — BPMN <-> PipelineDefinition import/export with validators
+    planner/      # package name @virta/planner — critical path, timing, ExecutionMode decisions
+    cdk/          # package name @virta/cdk — CDK/projen-based infra generators
+    mcp-server/   # package name @virta/mcp-server — MCP server exposing Virta as tools
+    examples/     # package name @virta/examples — example pipelines, AWS demos, docs samples
+```
 
 Build / tooling (to be decided):
 
@@ -518,7 +719,7 @@ Build / tooling (to be decided):
 -   Infra code generation: `projen` + `aws-cdk`.
     
 
-## 12\. Open Decisions (for Future Design Discussion)
+## 13. Open Decisions (for Future Design Discussion)
 
 These aspects are **intentionally left open** so they can be decided later:
 
