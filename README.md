@@ -2,6 +2,8 @@
 
 Virta is a TypeScript-based **DAG workflow and pipeline engine** focused on portability, round-trip workflow interoperability, and secure tooling for AI-assisted development.
 
+For a detailed technical reference covering the DAG engine, workflow formats, and tooling expectations, see [`SPEC.md`](SPEC.md).
+
 ## Core capabilities
 - **Pure TypeScript runtime** with constructor-based step identity and parallel execution across DAG levels.
 - **Topological planning** via `buildLevels` to group dependency-satisfied steps that can run in parallel.
