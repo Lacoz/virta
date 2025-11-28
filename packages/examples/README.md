@@ -153,6 +153,40 @@ pnpm example:arazzo-asl
 - Round-trip conversion between formats
 - Using PipelineDefinition as intermediate format for format conversion
 
+### Arazzo ↔ BPMN Conversion (`arazzo-bpmn-conversion.ts`)
+
+Shows bidirectional conversion between Arazzo and BPMN formats using static files.
+
+**Run:**
+```bash
+pnpm example:arazzo-bpmn
+```
+
+**What it demonstrates:**
+- Loading Arazzo workflows from JSON files
+- Loading BPMN workflows from XML files
+- Converting Arazzo → PipelineDefinition → BPMN
+- Converting BPMN → PipelineDefinition → Arazzo
+- Round-trip conversion between formats
+- Saving converted workflows to files
+- Using PipelineDefinition as intermediate format for format conversion
+
+### BPMN (`bpmn.ts`)
+
+Demonstrates importing and exporting workflows using BPMN 2.0 XML format.
+
+**Run:**
+```bash
+pnpm example:bpmn
+```
+
+**What it demonstrates:**
+- Loading BPMN XML from files
+- Converting BPMN → PipelineDefinition
+- Exporting PipelineDefinition → BPMN XML
+- Round-trip conversion with BPMN tools
+- Using bpmn-moddle for XML parsing and generation
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:

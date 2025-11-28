@@ -1,0 +1,35 @@
+{
+  "scenarios": {
+    "order-processing": {
+      "steps": [
+        {
+          "id": "ValidateOrder",
+          "type": "operation",
+          "operationId": "ValidateOrder"
+        },
+        {
+          "id": "ProcessOrder",
+          "runAfter": [
+            "ValidateOrder"
+          ],
+          "type": "operation",
+          "operationId": "ProcessOrder"
+        },
+        {
+          "id": "FormatOrder",
+          "runAfter": [
+            "ProcessOrder"
+          ],
+          "type": "operation",
+          "operationId": "FormatOrder"
+        }
+      ]
+    }
+  },
+  "arazzo": "1.0.0",
+  "info": {
+    "title": "Order Processing Workflow (converted from BPMN)",
+    "version": "1.0.0",
+    "description": "Converted from BPMN 2.0 XML format"
+  }
+}

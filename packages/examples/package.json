@@ -27,14 +27,17 @@
     "example:registry": "tsx src/registry.ts",
     "example:asl": "tsx src/asl.ts",
     "example:arazzo": "tsx src/arazzo.ts",
-    "example:arazzo-asl": "tsx src/arazzo-asl-conversion.ts"
+    "example:arazzo-asl": "tsx src/arazzo-asl-conversion.ts",
+    "example:arazzo-bpmn": "tsx src/arazzo-bpmn-conversion.ts",
+    "example:bpmn": "tsx src/bpmn.ts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",
     "@virta/jsonata": "workspace:*",
     "@virta/registry": "workspace:*",
     "@virta/asl": "workspace:*",
-    "@virta/arazzo": "workspace:*"
+    "@virta/arazzo": "workspace:*",
+    "@virta/bpmn": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
