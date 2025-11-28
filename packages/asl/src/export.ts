@@ -75,13 +75,13 @@ export function pipelineDefinitionToAsl(
     
     if (nextNodes.length === 0) {
       // This is an end state
-      if ("End" in state) {
-        (state as any).End = true;
-      }
+      (state as any).End = true;
     } else if (nextNodes.length === 1) {
-      // Single next state
-      if ("Next" in state) {
-        (state as any).Next = nextNodes[0].id;
+      // Single next state - set Next property
+      (state as any).Next = nextNodes[0].id;
+      // Remove End if it was set
+      if ("End" in state) {
+        delete (state as any).End;
       }
     } else {
       // Multiple dependents - this requires a Parallel or Choice state
@@ -99,6 +99,9 @@ export function pipelineDefinitionToAsl(
           })),
         };
         states[node.id] = parallelState;
+      } else {
+        // For other state types, just set Next to first dependent
+        (state as any).Next = nextNodes[0].id;
       }
     }
   }
