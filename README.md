@@ -61,3 +61,9 @@ Use the devcontainer for isolated, least-privilege development:
 - `pnpm install` to restore dependencies.
 - `pnpm -r build` / `pnpm -r lint` to build and type-check all packages.
 - `pnpm -r test` to run package-level test suites (e.g., `@virta/core`).
+
+### Versioning and releases
+Changes are versioned with [Changesets](https://github.com/changesets/changesets):
+- Run `pnpm changeset` to record package-specific change notes.
+- Run `pnpm version:packages` to apply pending changesets and update package versions across the monorepo.
+- Run `pnpm release` to publish updated packages after builds/tests succeed.
