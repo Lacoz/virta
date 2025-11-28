@@ -106,6 +106,21 @@ pnpm example:registry
 - Converting RegisteredStep[] back to PipelineDefinition
 - Round-trip conversion for import/export workflows
 
+### ASL (`asl.ts`)
+
+Shows how to import and export workflows using Amazon States Language (ASL) format.
+
+**Run:**
+```bash
+pnpm example:asl
+```
+
+**What it demonstrates:**
+- Importing ASL state machine definitions
+- Converting ASL to PipelineDefinition
+- Exporting PipelineDefinition to ASL
+- Round-trip conversion with AWS Step Functions format
+
 ## Running Examples
 
 All examples can be run using the npm scripts defined in `package.json`:
