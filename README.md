@@ -67,3 +67,21 @@ Changes are versioned with [Changesets](https://github.com/changesets/changesets
 - Run `pnpm changeset` to record package-specific change notes.
 - Run `pnpm version:packages` to apply pending changesets and update package versions across the monorepo.
 - Run `pnpm release` to publish updated packages after builds/tests succeed.
+
+### Publishing to GitHub Packages
+Virta packages publish under the `@virta` scope to GitHub Packages:
+1. Authenticate with a token that has the `packages:write` scope: `export GITHUB_TOKEN=<gh_token>`.
+2. Use the repo `.npmrc` (scope registry is already set to `https://npm.pkg.github.com`).
+3. Run validation before publishing: `pnpm -r lint` and `pnpm -r test`.
+4. Create a changeset for each package that should release: `pnpm changeset`.
+5. Apply the versions: `pnpm version:packages` (this updates `package.json` files and changelogs).
+6. Publish to GitHub Packages: `pnpm release`.
+
+To ship the current `@virta/core` build first, add the changeset noted above, then run steps 5 and 6 to push the package to GitHub Packages.
+
+### GitHub Actions release automation
+Releases can also run via CI with the `Release packages` workflow. On pushes to `main`, the workflow:
+- installs dependencies with pnpm on Node.js 24, runs `pnpm -r lint` and `pnpm -r test`, and then invokes `changesets/action@v1` with `pnpm version:packages` / `pnpm release`.
+- uses `secrets.GITHUB_TOKEN` for both repository writes and publishing to `npm.pkg.github.com` (the `.npmrc` expects `GITHUB_TOKEN`).
+
+When there are unpublished changesets, the workflow opens a release PR. Merging that PR triggers the publish step to GitHub Packages with the updated versions and changelogs.
