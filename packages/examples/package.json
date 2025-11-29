@@ -31,7 +31,8 @@
     "example:arazzo-bpmn": "tsx src/arazzo-bpmn-conversion.ts",
     "example:bpmn": "tsx src/bpmn.ts",
     "example:planner": "tsx src/planner.ts",
-    "example:arazzo-ts": "tsx src/arazzo-ts-conversion.ts"
+    "example:arazzo-ts": "tsx src/arazzo-ts-conversion.ts",
+    "example:pipeline-builder": "tsx src/pipeline-builder.ts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",

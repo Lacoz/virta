@@ -195,3 +195,5 @@ export async function runPipeline<S, T>(
   await hooks?.onPipelineComplete?.(result);
   return result;
 }
+
+export { PipelineBuilder } from "./PipelineBuilder.js";

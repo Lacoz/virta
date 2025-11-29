@@ -6,6 +6,7 @@ Virta's core DAG pipeline engine. It provides the foundational types and utiliti
 - constructor-based `PipelineStep` identity and `RegisteredStep` metadata
 - `buildLevels` to group dependency-satisfied steps for parallel execution
 - `runPipeline` with lifecycle hooks returning a structured `PipelineResult`
+- `PipelineBuilder` for fluent pipeline construction (optional)
 
 ## Usage
 
@@ -43,6 +44,26 @@ const result = await runPipeline(definition, {
 console.log(result.status); // "success"
 console.log(result.context.target.greeting); // "hello, alice"
 ```
+
+## PipelineBuilder (Optional)
+
+The `PipelineBuilder` provides a fluent API for constructing pipelines:
+
+```ts
+import { PipelineBuilder } from "@virta/core";
+
+const definition = new PipelineBuilder<unknown, { user?: string; greeting?: string }>()
+  .add(FetchUser)
+  .add(GreetUser, { dependsOn: [FetchUser] })
+  .build();
+
+const result = await runPipeline(definition, {
+  source: {},
+  target: {},
+});
+```
+
+The builder creates the same `PipelineDefinition` as the explicit approach. Both methods are equally valid - choose based on preference.
 
 ## Testing
 

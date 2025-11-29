@@ -34,6 +34,23 @@ pnpm example:parallel
 - Performance benefits of parallel execution
 - Level-based execution model
 
+### PipelineBuilder (`pipeline-builder.ts`)
+
+Complex example demonstrating the PipelineBuilder fluent API for constructing pipelines with multiple parallel branches, metadata, and planner integration.
+
+**Run:**
+```bash
+pnpm example:pipeline-builder
+```
+
+**What it demonstrates:**
+- PipelineBuilder fluent API
+- Complex dependency chains with parallel branches
+- Step metadata (timing, execution hints)
+- Integration with execution planner
+- Comparison with explicit pipeline definition approach
+- Real-world e-commerce order processing scenario
+
 ### Error Handling (`error-handling.ts`)
 
 Demonstrates how errors are handled and propagated through the pipeline.
