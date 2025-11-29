@@ -4,7 +4,13 @@ import type { PipelineDefinition, NodeId } from "@virta/registry";
 /**
  * Execution mode for Virta pipelines
  */
-export type ExecutionMode = "lambda" | "step-functions" | "hybrid";
+export type ExecutionMode = 
+  | "lambda" 
+  | "step-functions" 
+  | "hybrid" 
+  | "fargate" 
+  | "docker-local" 
+  | "in-memory";
 
 /**
  * Configuration for the execution planner
@@ -28,6 +34,16 @@ export interface PlannerConfig {
    * Default: 0.1 (10% safety margin)
    */
   safetyMargin?: number;
+
+  /**
+   * Enable Fargate fallback
+   */
+  fargateFallback?: boolean;
+  
+  /**
+   * Enable Docker local simulation
+   */
+  dockerLocal?: boolean;
 }
 
 /**
@@ -85,6 +101,14 @@ export interface ExecutionPlan {
   stepFunctionsNodes?: NodeId[];
 
   /**
+   * Fallback information
+   */
+  fallback?: {
+      mode: ExecutionMode;
+      reason: string;
+  };
+
+  /**
    * Reasoning for the decision
    */
   reasoning: string[];
@@ -94,5 +118,3 @@ export interface ExecutionPlan {
  * Metadata map: node ID -> StepMetadata
  */
 export type MetadataByNodeId = Record<NodeId, StepMetadata>;
-
-

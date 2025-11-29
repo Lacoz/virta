@@ -1,0 +1,27 @@
+{
+  "name": "@virta/runner",
+  "version": "0.1.0",
+  "description": "Virta pipeline runner with adapters for various execution environments",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@virta/core": "workspace:*",
+    "@virta/planner": "workspace:*",
+    "@virta/asl": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-sfn": "^3.0.0",
+    "@aws-sdk/client-ecs": "^3.0.0"
+  }
+}
+

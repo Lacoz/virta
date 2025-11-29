@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/core/package.json packages/core/
+COPY packages/runner/package.json packages/runner/
+COPY packages/planner/package.json packages/planner/
+COPY packages/asl/package.json packages/asl/
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source
+COPY packages ./packages
+
+# Build
+RUN pnpm run -r build
+
+# Default command
+CMD ["node", "packages/examples/dist/runner-fallback-chain-docker.js"]
+

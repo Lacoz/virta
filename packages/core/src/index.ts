@@ -197,3 +197,9 @@ export async function runPipeline<S, T>(
 }
 
 export { PipelineBuilder } from "./PipelineBuilder.js";
+
+// Runtime utilities
+export * from "./errors.js";
+export * from "./ExecutionCheckpoint.js";
+export * from "./RuntimeMonitor.js";
+export * from "./TimeoutHooks.js";

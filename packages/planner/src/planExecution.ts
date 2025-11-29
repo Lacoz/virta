@@ -32,6 +32,14 @@ export function planExecution(
 ): ExecutionPlan {
   const reasoning: string[] = [];
   
+  if (config.dockerLocal) {
+      return {
+          mode: "docker-local",
+          criticalPath: computeCriticalPath(def, metaByNodeId),
+          reasoning: ["Docker local simulation enabled"]
+      };
+  }
+
   // Compute critical path
   const criticalPath = computeCriticalPath(def, metaByNodeId);
   reasoning.push(
@@ -60,9 +68,22 @@ export function planExecution(
   // Decision logic
   const pessimisticTime = criticalPath.timing.pessimisticMs;
 
-  // If pessimistic time exceeds safe limit, use Step Functions
+  // If pessimistic time exceeds safe limit, use Step Functions OR fallback to Fargate if configured
   if (pessimisticTime >= safeLambdaLimit) {
     reasoning.push(`Pessimistic time (${pessimisticTime}ms) exceeds safe Lambda limit`);
+    
+    if (config.fargateFallback) {
+        return {
+            mode: "fargate",
+            criticalPath,
+            reasoning,
+            fallback: {
+                mode: "fargate",
+                reason: "Execution time exceeds Lambda limits"
+            }
+        };
+    }
+
     return {
       mode: "step-functions",
       criticalPath,
@@ -169,5 +190,3 @@ function findHybridCutPoint(
 
   return null;
 }
-
-

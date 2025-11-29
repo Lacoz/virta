@@ -32,7 +32,12 @@
     "example:bpmn": "tsx src/bpmn.ts",
     "example:planner": "tsx src/planner.ts",
     "example:arazzo-ts": "tsx src/arazzo-ts-conversion.ts",
-    "example:pipeline-builder": "tsx src/pipeline-builder.ts"
+    "example:pipeline-builder": "tsx src/pipeline-builder.ts",
+    "example:runner-docker": "tsx src/runner-docker.ts",
+    "example:runner-fallback": "tsx src/runner-fallback.ts",
+    "example:runner-migration": "tsx src/runner-migration-docker.ts",
+    "example:runner-split": "tsx src/runner-split-docker.ts",
+    "example:runner-chain": "tsx src/runner-fallback-chain-docker.ts"
   },
   "dependencies": {
     "@virta/core": "workspace:*",
@@ -42,7 +47,8 @@
     "@virta/arazzo": "workspace:*",
     "@virta/bpmn": "workspace:*",
     "@virta/planner": "workspace:*",
-    "@virta/ts-codegen": "workspace:*"
+    "@virta/ts-codegen": "workspace:*",
+    "@virta/runner": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

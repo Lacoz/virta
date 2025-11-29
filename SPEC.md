@@ -531,9 +531,11 @@ Package: `@virta/planner`.
 interface PlannerConfig {
   lambdaMaxMs: number; // e.g. 12 * 60_000
   defaultExecutionMode?: ExecutionMode; // fallback policy
+  fargateFallback?: boolean; // enable Fargate fallback
+  dockerLocal?: boolean; // enable local Docker simulation
 }
 
-type ExecutionMode = "lambda" | "step-functions" | "hybrid";
+type ExecutionMode = "lambda" | "step-functions" | "hybrid" | "fargate" | "docker-local" | "in-memory";
 ```
 
 ### 9.2 Critical Path Computation
@@ -729,7 +731,7 @@ Package: `@virta/mcp-server`.
     
 -   `export_arazzo`
     Returns Arazzo scenario JSON/YAML.
-
+    
 -   `export_bpmn`
     Returns BPMN 2.0 XML for a pipeline.
     
@@ -765,6 +767,7 @@ virta/
     ts-codegen/   # package name @virta/ts-codegen — TypeScript code generation and parsing
     planner/      # package name @virta/planner — critical path, timing, ExecutionMode decisions
     cdk/          # package name @virta/cdk — CDK/projen-based infra generators
+    runner/       # package name @virta/runner — unified execution runner with adapters
     mcp-server/   # package name @virta/mcp-server — MCP server exposing Virta as tools
     examples/     # package name @virta/examples — example pipelines, AWS demos, docs samples
 ```
@@ -827,3 +830,26 @@ These aspects are **intentionally left open** so they can be decided later:
 
 _This specification defines Virta’s architecture and responsibilities at a high level.  
 Implementation details (APIs, config shapes, retry/backoff strategies, logging formats) can be refined iteratively once the core packages are scaffolded._
+
+## 15. Runner Package with Adapters
+
+The `@virta/runner` package provides a unified execution interface with adapters for different environments.
+
+### 15.1 Architecture
+- **Core (`@virta/core`)**: Platform-agnostic runtime utilities (monitoring, checkpointing, errors).
+- **Runner (`@virta/runner`)**: Platform-specific adapters and unified API.
+
+### 15.2 Execution Modes
+- `"lambda"`: Primary execution mode (direct execution).
+- `"step-functions"`: Orchestrator mode (delegates steps to Lambda).
+- `"hybrid"`: Split execution (Lambda prefix + Step Functions suffix).
+- `"fargate"`: Fallback for long-running tasks (direct execution).
+- `"docker-local"`: Simulation using `docker-lambda` and `docker-step-functions`.
+- `"in-memory"`: Direct local Node.js execution.
+
+### 15.3 Fallback Strategy
+Lambda-first approach with automatic fallback:
+1. Start in Lambda.
+2. Monitor execution time.
+3. Approaching timeout -> Attempt Hybrid split.
+4. Split not possible -> Fallback to Fargate.

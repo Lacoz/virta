@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Simulates AWS Lambda environment
+  lambda-simulator:
+    image: lambci/lambda:nodejs18.x
+    command: index.handler
+    volumes:
+      - ./packages/examples/dist:/var/task
+    environment:
+      - AWS_LAMBDA_FUNCTION_TIMEOUT=900
+    ports:
+      - "9001:9001"
+
+  # Simulates Step Functions Orchestrator (mock)
+  # In reality we might use a localstack or amazon/aws-stepfunctions-local
+  step-functions-simulator:
+    image: amazon/aws-stepfunctions-local
+    environment:
+      - AWS_DEFAULT_REGION=us-east-1
+    ports:
+      - "8083:8083"
+
+  # Simulates Fargate (just a node container for now)
+  fargate-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.runner
+    environment:
+      - EXECUTION_MODE=fargate
+    depends_on:
+      - lambda-simulator
+
