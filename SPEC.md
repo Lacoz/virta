@@ -220,6 +220,18 @@ Behavior:
 
 Implementation detail(s) like retry strategy are configurable and not hard-coded in this spec.
 
+### 1.4 PipelineBuilder (Optional)
+
+Optional fluent API for constructing `PipelineDefinition`. Creates core format (works with `runPipeline`). For planner, convert via `registeredStepsToPipelineDefinition`.
+
+```ts
+const pipeline = new PipelineBuilder<OrderData, ProcessedOrder>()
+  .add(ValidateOrderStep)
+  .add(ProcessOrderStep, { dependsOn: [ValidateOrderStep] })
+  .build();
+```
+    
+
 ## 2\. Intermediate DAG Model: `PipelineDefinition`
 
 To support multiple external workflow formats (ASL, Arazzo, custom JSON/YAML), Virta uses an intermediate DAG structure.
